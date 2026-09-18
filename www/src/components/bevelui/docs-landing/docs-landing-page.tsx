@@ -46,13 +46,13 @@ export function DocsLandingPage() {
     <div className="mx-auto flex max-w-5xl flex-col gap-8">
       {/* Hero */}
       <div className="flex flex-col gap-3">
-        <p className="font-mono text-[11px] font-medium uppercase tracking-wider text-primary/90">
+        <p className="font-mono text-bui-xs font-medium uppercase tracking-wider text-primary/90">
           Documentation
         </p>
-        <h1 className="text-[30px] font-semibold tracking-tight text-foreground sm:text-[36px]">
+        <h1 className="text-3xl font-semibold tracking-tight text-foreground sm:text-4xl">
           {DOCS_SYSTEMS.length} systems, ready to install
         </h1>
-        <p className="max-w-xl text-[14.5px] leading-relaxed text-muted-foreground">
+        <p className="max-w-xl text-bui-md leading-relaxed text-muted-foreground">
           Complete UI engineering problems solved — state machines, edge cases, and
           accessibility included. Copy the source in, own it forever.
         </p>
@@ -72,7 +72,7 @@ export function DocsLandingPage() {
           onChange={(e) => setQuery(e.target.value)}
           placeholder="Filter by name, use case, or keyword…"
           className={cn(
-            "w-full rounded-md border border-border/70 bg-card py-2.5 pl-9 pr-9 text-[13.5px]",
+            "w-full rounded-md border border-border/70 bg-card py-2.5 pl-9 pr-9 text-bui-base",
             "text-foreground placeholder:text-muted-foreground/70",
             "focus:border-primary/40 focus:outline-none focus:ring-1 focus:ring-primary/20",
           )}
@@ -91,7 +91,7 @@ export function DocsLandingPage() {
 
       {isSearching ? (
         <div className="flex flex-col gap-3">
-          <p className="font-mono text-[11px] uppercase tracking-wider text-muted-foreground/70">
+          <p className="font-mono text-bui-xs uppercase tracking-wider text-muted-foreground/70">
             {filteredFlat.length} result{filteredFlat.length === 1 ? "" : "s"}
           </p>
           {filteredFlat.length > 0 ? (
@@ -102,8 +102,8 @@ export function DocsLandingPage() {
             </div>
           ) : (
             <div className="flex flex-col items-center gap-1 rounded-md border border-dashed border-border py-14 text-center">
-              <p className="text-[13.5px] font-medium text-foreground">No systems match "{query}"</p>
-              <p className="text-[12.5px] text-muted-foreground">
+              <p className="text-bui-base font-medium text-foreground">No systems match "{query}"</p>
+              <p className="text-bui-sm text-muted-foreground">
                 Try a different name, use case, or keyword.
               </p>
             </div>
@@ -125,10 +125,10 @@ export function DocsLandingPage() {
                   className="scroll-mt-32 flex flex-col gap-4"
                 >
                   <div className="flex flex-col gap-0.5">
-                    <h2 className="text-[16px] font-semibold text-foreground">
+                    <h2 className="text-bui-lg font-semibold text-foreground">
                       {category.label}
                     </h2>
-                    <p className="text-[12.5px] text-muted-foreground">
+                    <p className="text-bui-sm text-muted-foreground">
                       {category.description}
                     </p>
                   </div>

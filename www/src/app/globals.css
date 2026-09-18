@@ -66,7 +66,7 @@
   --radius: 0.6rem;
 
   /* #c2f13c — exact match */
-  --primary: oklch(84.236% 0.25261 141.523);
+  --primary: oklch(0.8072 0.2734 142.43);
   --primary-foreground: oklch(0.2 0.05 123.6);
 
   --background: oklch(1 0 0);
@@ -84,7 +84,7 @@
   --destructive: oklch(0.577 0.245 27.325);
   --border: oklch(0.92 0.004 286.32);
   --input: oklch(0.92 0.004 286.32);
-  --ring: oklch(84.236% 0.25261 141.523);
+  --ring: oklch(0.8072 0.2734 142.43);
 
   --sh-keyword: #f97583;
   --sh-string: #9ecbff;
@@ -98,7 +98,7 @@
 }
 
 .dark {
-  --primary: oklch(84.236% 0.25261 141.523);
+  --primary: oklch(0.8072 0.2734 142.43);
   --primary-foreground: oklch(0.141 0.005 285.823);
   --background: oklch(0.141 0.005 285.823);
   --foreground: oklch(0.985 0 0);
@@ -111,11 +111,11 @@
   --muted: oklch(0.274 0.006 286.033);
   --muted-foreground: oklch(0.705 0.015 286.067);
   --accent: oklch(0.894 0.202 123.6 / 0.1);
-  --accent-foreground: oklch(84.236% 0.25261 141.523);
+  --accent-foreground: oklch(0.8072 0.2734 142.43);
   --destructive: oklch(0.704 0.191 22.216);
   --border: oklch(1 0 0 / 10%);
   --input: oklch(1 0 0 / 15%);
-  --ring: oklch(84.236% 0.25261 141.523);
+  --ring: oklch(0.8072 0.2734 142.43);
 
   --sh-keyword: #f97583;
   --sh-string: #9ecbff;
@@ -153,5 +153,92 @@
 @layer components {
   .gradient-primary {
     @apply bg-linear-to-t from-lime-600 via-primary  to-lime-200 bg-clip-text text-transparent;
+  }
+}
+
+/* ─── Bevel UI foundations ────────────────────────────────────────────────────
+   Shared primitives for components/bevelui/*. Added so component files can stop
+   inventing one-off pixel sizes, z-indexes and utilities inline.
+   ────────────────────────────────────────────────────────────────────────── */
+
+@theme inline {
+  /* Type scale — replaces the 160 ad-hoc text-[Npx] values across bevelui.
+     bui-2xs..bui-lg cover every size the systems actually needed. */
+  --text-bui-2xs: 0.625rem; /* 10px — meta, counts, kbd hints */
+  --text-bui-2xs--line-height: 0.875rem;
+  --text-bui-xs: 0.6875rem; /* 11px — secondary labels, captions */
+  --text-bui-xs--line-height: 1rem;
+  --text-bui-sm: 0.75rem; /* 12px — dense body, code lines */
+  --text-bui-sm--line-height: 1.125rem;
+  --text-bui-base: 0.8125rem; /* 13px — primary UI body */
+  --text-bui-base--line-height: 1.25rem;
+  --text-bui-md: 0.875rem; /* 14px — inputs, emphasised body */
+  --text-bui-md--line-height: 1.375rem;
+  --text-bui-lg: 1rem; /* 16px — card and panel titles */
+  --text-bui-lg--line-height: 1.5rem;
+}
+
+@layer base {
+  :root {
+    /* Layering scale — one ladder for every overlay in the library, so a tour
+       can sit above a palette which sits above a toast without magic numbers. */
+    --z-bui-base: 1;
+    --z-bui-sticky: 20;
+    --z-bui-overlay: 40; /* dimmed backdrops */
+    --z-bui-panel: 50; /* drawers, inline popovers */
+    --z-bui-modal: 60; /* command palette, spotlight, lightbox */
+    --z-bui-tour: 70; /* product tour — above app modals */
+    --z-bui-toast: 80; /* always on top */
+
+    /* Motion — honoured by every bevelui transition. */
+    --bui-ease: cubic-bezier(0.16, 1, 0.3, 1);
+    --bui-duration-fast: 120ms;
+    --bui-duration: 180ms;
+    --bui-duration-slow: 320ms;
+  }
+}
+
+@utility no-scrollbar {
+  scrollbar-width: none;
+  -ms-overflow-style: none;
+  &::-webkit-scrollbar {
+    display: none;
+    width: 0;
+    height: 0;
+  }
+}
+
+/* Expands a thin drag handle's pointer target to a comfortable size without
+   changing its visual width. Used by resizable. */
+@utility hit-target-x {
+  &::after {
+    content: "";
+    position: absolute;
+    inset-block: 0;
+    inset-inline: -6px;
+  }
+}
+
+@utility hit-target-y {
+  &::after {
+    content: "";
+    position: absolute;
+    inset-inline: 0;
+    inset-block: -6px;
+  }
+}
+
+@layer base {
+  /* Every bevelui animation collapses to an instant state change for users who
+     ask for reduced motion. Previously no component honoured this. */
+  @media (prefers-reduced-motion: reduce) {
+    *,
+    *::before,
+    *::after {
+      animation-duration: 0.01ms !important;
+      animation-iteration-count: 1 !important;
+      transition-duration: 0.01ms !important;
+      scroll-behavior: auto !important;
+    }
   }
 }

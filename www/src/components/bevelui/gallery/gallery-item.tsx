@@ -1,14 +1,17 @@
+"use client";
+
 import * as React from "react";
-import { useGallery } from "./gallery-context";
-import { cn } from "@/lib/utils";
 import {
-  IconFileText,
-  IconMusic,
-  IconVideo,
-  IconFile,
   IconCheck,
   IconEye,
+  IconFile,
+  IconFileText,
+  IconMusic,
+  IconPhoto,
+  IconVideo,
 } from "@tabler/icons-react";
+import { cn } from "@/lib/utils";
+import { useGallery } from "./gallery-context";
 import type { GalleryItem, MediaType } from "./types";
 
 function formatSize(bytes?: number): string {
@@ -25,8 +28,10 @@ function formatDuration(seconds?: number): string {
   return `${m}:${s.toString().padStart(2, "0")}`;
 }
 
+// `image` mapped to IconFile in the original, so an image with no thumbnail
+// showed a generic document glyph.
 const TYPE_ICONS: Record<MediaType, React.ElementType> = {
-  image: IconFile,
+  image: IconPhoto,
   video: IconVideo,
   audio: IconMusic,
   document: IconFileText,
@@ -39,112 +44,146 @@ export interface GalleryItemProps {
 }
 
 export function GalleryItemCard({ item, className }: GalleryItemProps) {
-  const { selectedIds, lightboxId, config, select, openLightbox } =
-    useGallery();
+  const { selectedIds, config, select, openLightbox } = useGallery();
+
   const isSelected = selectedIds.has(item.id);
   const mode = config.selectionMode ?? "single";
-  const ar = config.aspectRatio ?? 1;
+  const aspect = config.aspectRatio ?? 1;
+  const selectable = mode !== "none";
+  const previewable = item.type === "image" || item.type === "video";
 
   const thumb = item.thumbnail ?? (item.type === "image" ? item.url : null);
   const Icon = TYPE_ICONS[item.type];
 
-  function handleClick(e: React.MouseEvent) {
-    if (mode !== "none") {
-      select(item.id, e.metaKey || e.ctrlKey || e.shiftKey);
+  function handleActivate(e: React.MouseEvent | React.KeyboardEvent) {
+    if (selectable) {
+      const additive =
+        "metaKey" in e ? e.metaKey || e.ctrlKey || e.shiftKey : false;
+      select(item.id, additive);
+    } else if (previewable) {
+      openLightbox(item.id);
     }
   }
 
-  function handleDoubleClick() {
-    if (item.type === "image" || item.type === "video") {
+  function handleKeyDown(e: React.KeyboardEvent) {
+    if (e.key === "Enter" || e.key === " ") {
+      e.preventDefault();
+      handleActivate(e);
+    }
+    // A keyboard path to the lightbox, which previously existed only as a
+    // double-click and a hover-revealed button.
+    if (previewable && (e.key === "o" || e.key === "O")) {
+      e.preventDefault();
       openLightbox(item.id);
     }
   }
 
   return (
     <div
-      onClick={handleClick}
-      onDoubleClick={handleDoubleClick}
+      role={selectable ? "option" : "button"}
+      aria-selected={selectable ? isSelected : undefined}
+      aria-label={item.name}
+      tabIndex={0}
+      onClick={handleActivate}
+      onDoubleClick={() => previewable && openLightbox(item.id)}
+      onKeyDown={handleKeyDown}
       className={cn(
-        "group relative rounded-lg overflow-hidden border-2 transition-all cursor-pointer",
-        "bg-muted/30 hover:bg-muted/50",
+        "group relative cursor-pointer overflow-hidden rounded-lg border-2 bg-muted/30 transition-all",
+        "hover:bg-muted/50",
+        "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2",
         isSelected
           ? "border-primary shadow-[0_0_0_1px] shadow-primary"
           : "border-transparent hover:border-border",
         className,
       )}
-      style={{ aspectRatio: ar }}
+      style={{ aspectRatio: aspect }}
     >
-      {/* Thumbnail */}
       {thumb ? (
         <img
           src={thumb}
-          alt={item.name}
-          className="w-full h-full object-cover"
+          alt=""
+          aria-hidden
           loading="lazy"
+          decoding="async"
+          className="size-full object-cover"
         />
       ) : (
-        <div className="w-full h-full flex items-center justify-center">
+        <div className="flex size-full items-center justify-center">
           <Icon
             size={28}
             strokeWidth={1.5}
             className="text-muted-foreground/40"
+            aria-hidden
           />
         </div>
       )}
 
-      {/* Overlay on hover */}
       <div
         className={cn(
-          "absolute inset-0 bg-black/0 group-hover:bg-black/30 transition-colors",
+          "absolute inset-0 bg-black/0 transition-colors group-hover:bg-black/30",
           isSelected && "bg-primary/10",
         )}
+        aria-hidden
       />
 
-      {/* Selection checkbox */}
-      {mode !== "none" && (
-        <div
+      {selectable && (
+        <span
+          aria-hidden
           className={cn(
-            "absolute top-1.5 left-1.5 w-4.5 h-4.5 rounded-full border-2 flex items-center justify-center transition-all",
+            "absolute left-1.5 top-1.5 flex size-[18px] items-center justify-center rounded-full border-2 transition-all",
             isSelected
-              ? "border-primary bg-primary scale-100"
-              : "border-white/60 bg-black/20 scale-75 opacity-0 group-hover:opacity-100 group-hover:scale-100",
+              ? "scale-100 border-primary bg-primary"
+              : cn(
+                  "border-white/60 bg-black/20",
+                  // Visible on touch and on keyboard focus, not hover only.
+                  "scale-75 opacity-0 group-hover:scale-100 group-hover:opacity-100",
+                  "group-focus-visible:scale-100 group-focus-visible:opacity-100",
+                  "[@media(hover:none)]:scale-100 [@media(hover:none)]:opacity-100",
+                ),
           )}
         >
           {isSelected && (
-            <IconCheck size={10} strokeWidth={3} className="text-black" />
+            <IconCheck
+              size={10}
+              strokeWidth={3}
+              className="text-primary-foreground"
+            />
           )}
-        </div>
+        </span>
       )}
 
-      {/* Preview button (images/video) */}
-      {(item.type === "image" || item.type === "video") && (
+      {previewable && (
         <button
           type="button"
           onClick={(e) => {
             e.stopPropagation();
             openLightbox(item.id);
           }}
-          className="absolute top-1.5 right-1.5 w-6 h-6 rounded-full bg-black/40 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity hover:bg-black/60"
-          aria-label="Preview"
+          aria-label={`Preview ${item.name}`}
+          className={cn(
+            "absolute right-1.5 top-1.5 flex size-7 items-center justify-center rounded-full bg-black/50 text-white transition-opacity hover:bg-black/70",
+            "opacity-0 group-hover:opacity-100 focus-visible:opacity-100",
+            "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white",
+            // Without this the lightbox is unreachable on a touch device.
+            "[@media(hover:none)]:opacity-100",
+          )}
         >
-          <IconEye size={12} className="text-white" />
+          <IconEye size={13} aria-hidden />
         </button>
       )}
 
-      {/* Duration badge */}
-      {item.duration && (
-        <div className="absolute bottom-1 right-1 px-1 py-0.5 rounded bg-black/60 text-[9px] font-mono text-white">
+      {item.duration ? (
+        <span className="absolute bottom-1 right-1 rounded bg-black/70 px-1 py-0.5 font-mono text-bui-2xs text-white">
           {formatDuration(item.duration)}
-        </div>
-      )}
+        </span>
+      ) : null}
 
-      {/* Name + size (if showNames) */}
       {config.showNames && (
-        <div className="absolute bottom-0 inset-x-0 bg-gradient-to-t from-black/70 to-transparent p-2 pt-4">
-          <p className="text-[10px] text-white truncate">{item.name}</p>
-          {item.size && (
-            <p className="text-[9px] text-white/60">{formatSize(item.size)}</p>
-          )}
+        <div className="absolute inset-x-0 bottom-0 bg-gradient-to-t from-black/80 to-transparent p-2 pt-4">
+          <p className="truncate text-bui-2xs text-white">{item.name}</p>
+          {item.size ? (
+            <p className="text-bui-2xs text-white/70">{formatSize(item.size)}</p>
+          ) : null}
         </div>
       )}
     </div>

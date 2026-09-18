@@ -32,7 +32,7 @@ export function Related({ currentRoute, className }: DocBlockRelated & { classNa
             className="group flex flex-col gap-1.5 rounded-md border border-border/70 p-3.5 hover:border-border hover:bg-muted/40"
           >
             <div className="flex items-center justify-between gap-2">
-              <span className="flex items-center gap-1.5 text-[13.5px] font-medium text-foreground">
+              <span className="flex items-center gap-1.5 text-bui-base font-medium text-foreground">
                 {Icon && <Icon size={14} strokeWidth={1.9} className="text-muted-foreground" />}
                 {system.title}
               </span>
@@ -40,7 +40,7 @@ export function Related({ currentRoute, className }: DocBlockRelated & { classNa
                 {badge && (
                   <Badge
                     className={cn(
-                      "rounded-[4px] border px-1.5 py-0 font-mono text-[9px] font-medium uppercase leading-[18px] tracking-wide",
+                      "rounded-[4px] border px-1.5 py-0 font-mono text-bui-2xs font-medium uppercase leading-[18px] tracking-wide",
                       BADGE_CLASSES[badge.variant],
                     )}
                   >
@@ -54,7 +54,7 @@ export function Related({ currentRoute, className }: DocBlockRelated & { classNa
                 />
               </div>
             </div>
-            <p className="line-clamp-2 text-[12.5px] leading-relaxed text-muted-foreground">
+            <p className="line-clamp-2 text-bui-sm leading-relaxed text-muted-foreground">
               {system.description}
             </p>
           </Link>
@@ -70,7 +70,7 @@ export function BuiltWith({ techs, className }: DocBlockBuiltWith & { className?
       {techs.map((tech) => (
         <span
           key={tech}
-          className="rounded-[4px] border border-border/60 bg-card px-1.5 py-0.5 font-mono text-[11px] text-muted-foreground"
+          className="rounded-[4px] border border-border/60 bg-card px-1.5 py-0.5 font-mono text-bui-xs text-muted-foreground"
         >
           {tech}
         </span>

@@ -1,42 +1,48 @@
+"use client";
+
+import * as React from "react";
 import { IconSettings } from "@tabler/icons-react";
 import { Kbd, KbdGroup } from "@/components/ui/kbd";
 
 function Shortcut({ keys, label }: { keys: string[]; label: string }) {
   return (
-    <div className="flex items-center gap-1 text-muted-foreground">
+    <span className="flex items-center gap-1 text-muted-foreground">
       <KbdGroup>
-        {keys.map((k, i) => (
-          <Kbd key={i}>{k}</Kbd>
+        {keys.map((k) => (
+          <Kbd key={k}>{k}</Kbd>
         ))}
       </KbdGroup>
-      <span className="text-[11px]">{label}</span>
-    </div>
+      <span className="text-bui-xs">{label}</span>
+    </span>
   );
 }
 
-interface CommandPaletteFooterProps {
+export interface CommandPaletteFooterProps {
   onSettings?: () => void;
 }
 
-export function CommandPaletteFooter({
-  onSettings,
-}: CommandPaletteFooterProps) {
+export function CommandPaletteFooter({ onSettings }: CommandPaletteFooterProps) {
   return (
-    <div className="flex items-center gap-3 px-3 py-2 border-t border-border/60 bg-muted/20">
-      <div className="flex items-center justify-between gap-3 flex-1 min-w-0 overflow-x-auto no-scrollbar">
-        <Shortcut keys={["⇧", "⇩"]} label="Select" />
-
+    <div className="flex items-center gap-3 border-t border-border/60 bg-muted/20 px-3 py-2">
+      <div className="no-scrollbar flex min-w-0 flex-1 items-center justify-between gap-3 overflow-x-auto">
+        {/* ↑ ↓ — the original printed ⇧ (shift) and ⇩ for "Select". */}
+        <Shortcut keys={["↑", "↓"]} label="Navigate" />
         <Shortcut keys={["↵"]} label="Open" />
         <Shortcut keys={["Esc"]} label="Close" />
       </div>
 
-      <button
-        onClick={onSettings}
-        className="shrink-0 text-muted-foreground hover:text-foreground transition-colors"
-        aria-label="Settings"
-      >
-        <IconSettings size={15} strokeWidth={1.6} />
-      </button>
+      {onSettings && (
+        <button
+          type="button"
+          onClick={onSettings}
+          aria-label="Command palette settings"
+          className="shrink-0 rounded p-0.5 text-muted-foreground transition-colors hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary"
+        >
+          <IconSettings size={15} strokeWidth={1.6} aria-hidden />
+        </button>
+      )}
     </div>
   );
 }
+
+CommandPaletteFooter.displayName = "CommandPaletteFooter";

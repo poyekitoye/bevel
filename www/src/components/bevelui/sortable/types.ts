@@ -1,10 +1,16 @@
+import type { DraggableAttributes } from "@dnd-kit/core";
+import type { SyntheticListenerMap } from "@dnd-kit/core/dist/hooks/utilities";
+
+export type { DraggableAttributes, SyntheticListenerMap };
+
 export type SortableBaseItem = { id: string };
 
 export interface SortableConfig {
+  /** Restrict dragging to a <SortableHandle> inside each item. */
   handle?: boolean;
   /**
-   * "list" (default) — vertical strategy + axis lock.
-   * "grid" — rect strategy, free-form drag in both axes.
+   * "list" (default) — vertical strategy with an axis lock.
+   * "grid" — rect strategy, free movement in both axes.
    */
   layout?: "list" | "grid";
 }

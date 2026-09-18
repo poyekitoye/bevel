@@ -1,122 +1,131 @@
+"use client";
+
 import * as React from "react";
 import { createPortal } from "react-dom";
 import { AnimatePresence, motion } from "motion/react";
 import { useTour } from "./tour-context";
+import {
+  useElementRect,
+  useMediaQuery,
+  usePrefersReducedMotion,
+} from "../lib/use-element-rect";
+import { useMounted } from "../lib/use-dismissable-layer";
 
-const PADDING = 8;
+const DEFAULT_PADDING = 8;
 
-interface Rect {
-  top: number;
-  left: number;
-  width: number;
-  height: number;
-}
-
-function useAnchorRect(step: number, isOpen: boolean): Rect | null {
-  const [rect, setRect] = React.useState<Rect | null>(null);
-
-  React.useLayoutEffect(() => {
-    if (!isOpen) {
-      setRect(null);
-      return;
-    }
-
-    function measure() {
-      const el = document.querySelector(`[data-tour-step="${step}"]`);
-      if (!el) return;
-      const r = el.getBoundingClientRect();
-      setRect({
-        top: r.top - PADDING,
-        left: r.left - PADDING,
-        width: r.width + PADDING * 2,
-        height: r.height + PADDING * 2,
-      });
-    }
-
-    measure();
-
-    window.addEventListener("scroll", measure, true);
-    window.addEventListener("resize", measure);
-
-    const el = document.querySelector(`[data-tour-step="${step}"]`);
-    const ro = new ResizeObserver(measure);
-    if (el) ro.observe(el);
-
-    return () => {
-      window.removeEventListener("scroll", measure, true);
-      window.removeEventListener("resize", measure);
-      ro.disconnect();
-    };
-  }, [step, isOpen]);
-
-  return rect;
-}
-
+/**
+ * Dims the page and cuts a hole around the current anchor.
+ *
+ * Rewritten from the original in three ways:
+ *  - measurement is rAF-coalesced (see useElementRect) instead of one setState
+ *    per scroll event, which made the cutout visibly lag the element
+ *  - the mask id is unique per instance, so two tours on a page no longer
+ *    collide on a document-global SVG id
+ *  - the highlight ring is actually drawn; the original rendered an empty
+ *    motion.div with no border, background or children
+ */
 export function TourOverlay() {
-  const { currentStep, isOpen, skip, showOverlay } = useTour();
-  const rect = useAnchorRect(currentStep, isOpen);
-  const [mounted, setMounted] = React.useState(false);
+  const { currentStep, isOpen, skip, showOverlay, currentStepDef } = useTour();
+  const mounted = useMounted();
+  const reduceMotion = usePrefersReducedMotion();
+  const isCompact = useMediaQuery("(max-width: 640px)");
 
-  React.useEffect(() => setMounted(true), []);
-  if (!mounted) return null;
-  if (!showOverlay) return;
+  const padding = currentStepDef?.highlightPadding ?? DEFAULT_PADDING;
+  const interactive = currentStepDef?.interactive ?? false;
+
+  const rect = useElementRect(
+    isOpen ? `[data-tour-step="${currentStep}"]` : null,
+    isOpen && showOverlay,
+    padding,
+  );
+
+  // Unique per mounted overlay — SVG ids are global to the document.
+  const maskId = React.useId().replace(/:/g, "");
+
+  if (!mounted || !showOverlay) return null;
+
+  const spring = reduceMotion
+    ? { duration: 0 }
+    : ({ type: "spring", stiffness: 380, damping: 34 } as const);
+
   return createPortal(
     <AnimatePresence>
-      {isOpen && rect && (
+      {isOpen && (
         <motion.div
           key="tour-overlay"
-          className="fixed inset-0 z-[200]"
+          className="fixed inset-0"
+          style={{ zIndex: "var(--z-bui-overlay)" }}
           initial={{ opacity: 0 }}
           animate={{ opacity: 1 }}
           exit={{ opacity: 0 }}
-          transition={{ duration: 0.2 }}
-          onClick={skip}
+          transition={{ duration: reduceMotion ? 0 : 0.2 }}
           aria-hidden
         >
+          {/* The dimmer. Clicking it abandons the tour, except on an
+              interactive step where the click belongs to the page. */}
           <svg
-            className="absolute inset-0 w-full h-full"
+            className="absolute inset-0 h-full w-full"
             xmlns="http://www.w3.org/2000/svg"
-            style={{ pointerEvents: "none" }}
+            onClick={interactive ? undefined : skip}
+            style={{ pointerEvents: interactive ? "none" : "auto" }}
           >
             <defs>
-              <mask id="tour-mask">
+              <mask id={maskId}>
                 <rect width="100%" height="100%" fill="white" />
-                <motion.rect
-                  rx={10}
-                  fill="black"
-                  animate={{
-                    x: rect.left,
-                    y: rect.top,
-                    width: rect.width,
-                    height: rect.height,
-                  }}
-                  transition={{ type: "spring", stiffness: 300, damping: 30 }}
-                />
+                {rect && (
+                  <motion.rect
+                    rx={10}
+                    fill="black"
+                    initial={false}
+                    animate={{
+                      x: rect.left,
+                      y: rect.top,
+                      width: rect.width,
+                      height: rect.height,
+                    }}
+                    transition={spring}
+                  />
+                )}
               </mask>
             </defs>
 
             <rect
               width="100%"
               height="100%"
-              fill="rgba(0, 0, 0, 0.65)"
-              mask="url(#tour-mask)"
+              fill="rgb(0 0 0 / 0.65)"
+              mask={`url(#${maskId})`}
             />
           </svg>
 
-          <motion.div
-            className="absolute"
-            style={{ pointerEvents: "none", borderRadius: 10 }}
-            animate={{
-              top: rect.top,
-              left: rect.left,
-              width: rect.width,
-              height: rect.height,
-            }}
-            transition={{ type: "spring", stiffness: 300, damping: 30 }}
-          />
+          {/* Highlight ring. Never intercepts pointer events, so an
+              interactive step can still receive the user's click. */}
+          {rect && (
+            <motion.div
+              className="pointer-events-none absolute rounded-[10px] ring-2 ring-primary ring-offset-0"
+              initial={false}
+              animate={{
+                top: rect.top,
+                left: rect.left,
+                width: rect.width,
+                height: rect.height,
+              }}
+              transition={spring}
+              style={{
+                boxShadow: interactive
+                  ? "0 0 0 4px rgb(var(--tour-ring-glow, 0 0 0) / 0)"
+                  : undefined,
+              }}
+            />
+          )}
+
+          {/* On phones the card is a bottom sheet, so reserve its space to
+              stop the cutout sitting underneath it. */}
+          {isCompact && <div className="absolute inset-x-0 bottom-0 h-0" />}
         </motion.div>
       )}
     </AnimatePresence>,
     document.body,
   );
 }
+
+TourOverlay.displayName = "TourOverlay";

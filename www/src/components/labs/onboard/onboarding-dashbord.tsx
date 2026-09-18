@@ -70,7 +70,6 @@ export function OnboardingDashboard({
         {/* Sidebar */}
         <TourAnchor step={2} asChild>
           <aside className="w-64 shrink-0 border-r border-border bg-muted/10 flex flex-col py-4 px-3 gap-6">
-            <TourAnchor step={1} ringClassName="rounded-2xl">
               <div className="px-2  p-2 ">
                 <div className={"flex items-end gap-2"}>
                   <BevelIcon className="size-6! shrink-0 -translate-y-1.5 text-rose-400" />

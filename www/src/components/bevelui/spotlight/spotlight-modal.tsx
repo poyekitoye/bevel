@@ -1,102 +1,21 @@
+"use client";
+
 import * as React from "react";
+import { createPortal } from "react-dom";
+import { AnimatePresence, motion } from "motion/react";
+import { IconLoader2, IconSearch, IconX } from "@tabler/icons-react";
+import { cn } from "@/lib/utils";
 import { useSpotlight } from "./spotlight-context";
 import { SpotlightResults } from "./spotlight-results";
 import { SpotlightEmpty } from "./spotlight-empty";
-import { IconSearch, IconX, IconLoader2 } from "@tabler/icons-react";
-import { AnimatePresence, motion } from "motion/react";
-import { cn } from "@/lib/utils";
+import {
+  useDismissableLayer,
+  useMounted,
+} from "../lib/use-dismissable-layer";
+import { usePrefersReducedMotion } from "../lib/use-element-rect";
 import type { SpotlightConfig } from "./types";
 
-export function SpotlightModal() {
-  const { config, isOpen, close, query, setQuery, isLoading } = useSpotlight();
-  const inputRef = React.useRef<HTMLInputElement>(null);
-
-  React.useEffect(() => {
-    if (isOpen) setTimeout(() => inputRef.current?.focus(), 50);
-  }, [isOpen]);
-
-  const hasResults = query.trim().length > 0;
-
-  return (
-    <AnimatePresence>
-      {isOpen && (
-        <>
-          <motion.div
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            exit={{ opacity: 0 }}
-            transition={{ duration: 0.15 }}
-            className="fixed inset-0 z-50 bg-black/40 backdrop-blur-sm"
-            onClick={close}
-          />
-
-          <motion.div
-            initial={{ opacity: 0, scale: 0.97, y: -8 }}
-            animate={{ opacity: 1, scale: 1, y: 0 }}
-            exit={{ opacity: 0, scale: 0.97, y: -8 }}
-            transition={{ duration: 0.16, ease: "easeOut" }}
-            className="fixed left-1/2 top-[10%] z-50 -translate-x-1/2 w-full max-w-4xl px-4  "
-          >
-            <div className="rounded-xl border border-border bg-popover shadow-2xl shadow-black/50 overflow-hidden h-full min-h-[400px] flex flex-col justify-between">
-              <div className="flex items-center gap-3 px-4 py-3 border-b border-border/60">
-                {isLoading ? (
-                  <IconLoader2
-                    size={17}
-                    className="text-muted-foreground/50 shrink-0 animate-spin"
-                  />
-                ) : (
-                  <IconSearch
-                    size={17}
-                    className="text-muted-foreground/50 shrink-0"
-                  />
-                )}
-                <input
-                  ref={inputRef}
-                  value={query}
-                  onChange={(e) => setQuery(e.target.value)}
-                  placeholder={config.placeholder ?? "Search anything…"}
-                  className="flex-1 bg-transparent text-[14px] text-foreground placeholder:text-muted-foreground/40 outline-none"
-                />
-                {query && (
-                  <button
-                    type="button"
-                    onClick={() => setQuery("")}
-                    className="text-muted-foreground/40 hover:text-muted-foreground transition-colors shrink-0"
-                  >
-                    <IconX size={14} />
-                  </button>
-                )}
-              </div>
-
-              {config.categories.length > 0 && hasResults && (
-                <CategoryTabs categories={config.categories} />
-              )}
-
-              <div className="max-h-[500px] overflow-y-auto flex-1">
-                {hasResults ? (
-                  <SpotlightResults config={config} />
-                ) : (
-                  <SpotlightEmpty />
-                )}
-              </div>
-
-              <div className="flex items-center justify-between px-4 py-2 border-t border-border/40 bg-muted/20">
-                <div className="flex items-center gap-3 text-[10px] font-mono text-muted-foreground/30">
-                  <span>↑↓ navigate</span>
-                  <span>⏎ open</span>
-                  <span>esc close</span>
-                </div>
-                <span className="text-[10px] font-mono text-muted-foreground/20">
-                  Spotlight
-                </span>
-              </div>
-            </div>
-          </motion.div>
-        </>
-      )}
-    </AnimatePresence>
-  );
-}
+// ─── Category tabs ────────────────────────────────────────────────────────────
 
 function CategoryTabs({
   categories,
@@ -104,43 +23,243 @@ function CategoryTabs({
   categories: SpotlightConfig["categories"];
 }) {
   const { activeCategory, setCategory, results } = useSpotlight();
-  const all = [{ id: "all", label: "All" }, ...categories];
+
+  const tabs = React.useMemo(
+    () => [{ id: "all", label: "All" }, ...categories],
+    [categories],
+  );
+
+  const counts = React.useMemo(() => {
+    const map = new Map<string, number>([["all", results.length]]);
+    for (const r of results) {
+      map.set(r.category, (map.get(r.category) ?? 0) + 1);
+    }
+    return map;
+  }, [results]);
+
+  function onKeyDown(e: React.KeyboardEvent) {
+    const index = tabs.findIndex((t) => t.id === activeCategory);
+    if (index === -1) return;
+    let next: number | null = null;
+    if (e.key === "ArrowRight") next = (index + 1) % tabs.length;
+    else if (e.key === "ArrowLeft") next = (index - 1 + tabs.length) % tabs.length;
+    if (next !== null) {
+      e.preventDefault();
+      e.stopPropagation();
+      setCategory(tabs[next].id);
+    }
+  }
 
   return (
-    <div className="flex items-center gap-1 px-3 py-2 border-b border-border/40 overflow-x-auto">
-      {all.map((cat) => {
-        const count =
-          cat.id === "all"
-            ? results.length
-            : results.filter((r) => r.category === cat.id).length;
+    <div
+      role="tablist"
+      aria-label="Result categories"
+      onKeyDown={onKeyDown}
+      className="no-scrollbar flex items-center gap-1 overflow-x-auto border-b border-border/40 px-3 py-2"
+    >
+      {tabs.map((cat) => {
+        const count = counts.get(cat.id) ?? 0;
+        const isActive = activeCategory === cat.id;
         return (
           <button
             key={cat.id}
             type="button"
+            role="tab"
+            aria-selected={isActive}
+            tabIndex={isActive ? 0 : -1}
+            // A tab that can only ever show nothing is not worth offering.
+            disabled={count === 0 && cat.id !== "all"}
             onClick={() => setCategory(cat.id)}
             className={cn(
-              "flex items-center gap-1.5 px-3 py-1 rounded-sm text-[11px] font-medium transition-colors whitespace-nowrap",
-              activeCategory === cat.id
+              "flex shrink-0 items-center gap-1.5 whitespace-nowrap rounded-sm px-3 py-1 text-bui-xs font-medium",
+              "transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary",
+              "disabled:cursor-not-allowed disabled:opacity-40",
+              isActive
                 ? "bg-primary/10 text-primary"
-                : "text-muted-foreground/60 hover:text-foreground hover:bg-muted/60",
+                : "text-muted-foreground hover:bg-muted/60 hover:text-foreground",
             )}
           >
             {cat.label}
-            {count > 0 && (
-              <span
-                className={cn(
-                  "text-[9px] font-mono",
-                  activeCategory === cat.id
-                    ? "text-primary/60"
-                    : "text-muted-foreground/30",
-                )}
-              >
-                {count}
-              </span>
-            )}
+            <span
+              className={cn(
+                "font-mono text-bui-2xs tabular-nums",
+                isActive ? "text-primary/60" : "text-muted-foreground/40",
+              )}
+            >
+              {count}
+            </span>
           </button>
         );
       })}
     </div>
   );
 }
+
+// ─── Modal ────────────────────────────────────────────────────────────────────
+
+export function SpotlightModal() {
+  const {
+    config,
+    isOpen,
+    close,
+    query,
+    setQuery,
+    isLoading,
+    moveUp,
+    moveDown,
+    selectHighlighted,
+    visibleResults,
+    highlightedIndex,
+  } = useSpotlight();
+
+  const mounted = useMounted();
+  const reduceMotion = usePrefersReducedMotion();
+  const inputRef = React.useRef<HTMLInputElement>(null);
+
+  const layerRef = useDismissableLayer<HTMLDivElement>({
+    open: isOpen,
+    onDismiss: close,
+    closeOnEscape: false, // the input clears the query first
+    initialFocusRef: inputRef,
+  });
+
+  const hasQuery = query.trim().length > 0;
+  const activeId = visibleResults[highlightedIndex]?.id;
+
+  // The footer has always advertised "↑↓ navigate ⏎ open". None of it was
+  // implemented — the context had no highlight state and no key handlers.
+  function onKeyDown(e: React.KeyboardEvent<HTMLInputElement>) {
+    switch (e.key) {
+      case "ArrowDown":
+        e.preventDefault();
+        moveDown();
+        break;
+      case "ArrowUp":
+        e.preventDefault();
+        moveUp();
+        break;
+      case "Enter":
+        e.preventDefault();
+        selectHighlighted();
+        break;
+      case "Escape":
+        e.preventDefault();
+        if (query) setQuery("");
+        else close();
+        break;
+    }
+  }
+
+  if (!mounted) return null;
+
+  return createPortal(
+    <AnimatePresence>
+      {isOpen && (
+        <>
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            transition={{ duration: reduceMotion ? 0 : 0.15 }}
+            className="fixed inset-0 bg-black/40 backdrop-blur-sm"
+            style={{ zIndex: "var(--z-bui-overlay)" }}
+            onClick={close}
+          />
+
+          <motion.div
+            initial={
+              reduceMotion ? { opacity: 1 } : { opacity: 0, scale: 0.97, y: -8 }
+            }
+            animate={{ opacity: 1, scale: 1, y: 0 }}
+            exit={
+              reduceMotion ? { opacity: 1 } : { opacity: 0, scale: 0.97, y: -8 }
+            }
+            transition={{ duration: reduceMotion ? 0 : 0.16, ease: "easeOut" }}
+            className="fixed inset-x-0 top-0 flex justify-center px-3 pt-[8svh] sm:px-4 sm:pt-[10vh]"
+            style={{ zIndex: "var(--z-bui-modal)" }}
+            onClick={close}
+          >
+            <div
+              ref={layerRef}
+              role="dialog"
+              aria-modal="true"
+              aria-label="Search"
+              onClick={(e) => e.stopPropagation()}
+              className={cn(
+                "flex w-full max-w-3xl flex-col overflow-hidden rounded-xl border border-border bg-popover shadow-2xl",
+                // Sized to content up to a ceiling, rather than the original's
+                // fixed 400px floor that left a large gap under the empty state.
+                "max-h-[80svh]",
+              )}
+            >
+              <div className="flex items-center gap-3 border-b border-border/60 px-4 py-3">
+                <span className="shrink-0 text-muted-foreground/60" aria-hidden>
+                  {isLoading ? (
+                    <IconLoader2 size={17} className="animate-spin" />
+                  ) : (
+                    <IconSearch size={17} />
+                  )}
+                </span>
+
+                <input
+                  ref={inputRef}
+                  value={query}
+                  onChange={(e) => setQuery(e.target.value)}
+                  onKeyDown={onKeyDown}
+                  placeholder={config.placeholder ?? "Search anything…"}
+                  className="flex-1 bg-transparent text-bui-md text-foreground outline-none placeholder:text-muted-foreground/50"
+                  role="combobox"
+                  aria-expanded={hasQuery}
+                  aria-controls="bui-spotlight-results"
+                  aria-autocomplete="list"
+                  aria-activedescendant={
+                    activeId ? `bui-spot-${activeId}` : undefined
+                  }
+                  aria-label={config.placeholder ?? "Search"}
+                  autoComplete="off"
+                  spellCheck={false}
+                />
+
+                {query && (
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setQuery("");
+                      inputRef.current?.focus();
+                    }}
+                    aria-label="Clear search"
+                    className="shrink-0 rounded p-0.5 text-muted-foreground/60 transition-colors hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary"
+                  >
+                    <IconX size={14} aria-hidden />
+                  </button>
+                )}
+              </div>
+
+              {config.categories.length > 0 && hasQuery && (
+                <CategoryTabs categories={config.categories} />
+              )}
+
+              <div className="min-h-0 flex-1 overflow-y-auto overscroll-contain">
+                {hasQuery ? <SpotlightResults config={config} /> : <SpotlightEmpty />}
+              </div>
+
+              <div className="flex items-center justify-between gap-3 border-t border-border/40 bg-muted/20 px-4 py-2">
+                <div className="no-scrollbar flex items-center gap-3 overflow-x-auto font-mono text-bui-2xs text-muted-foreground/50">
+                  <span>↑↓ navigate</span>
+                  <span>⏎ open</span>
+                  <span>esc close</span>
+                </div>
+                <span className="font-mono text-bui-2xs text-muted-foreground/30">
+                  Spotlight
+                </span>
+              </div>
+            </div>
+          </motion.div>
+        </>
+      )}
+    </AnimatePresence>,
+    document.body,
+  );
+}
+
+SpotlightModal.displayName = "SpotlightModal";

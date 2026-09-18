@@ -57,7 +57,7 @@ export function CropperToolbar({ onCrop, className }: CropperToolbarProps) {
       </div>
 
       {dims && (
-        <span className="text-[11px] font-mono text-muted-foreground/50">{dims}px</span>
+        <span className="text-bui-xs font-mono text-muted-foreground/50">{dims}px</span>
       )}
 
       <div className="flex-1" />

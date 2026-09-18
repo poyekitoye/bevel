@@ -6,19 +6,19 @@ export function PropsTable({ rows, className }: DocBlockPropsTable & { className
   return (
     <div className={cn("overflow-hidden rounded-md border border-border/70", className)}>
       {/* Table — sm and up */}
-      <table className="hidden w-full border-collapse text-left text-[13px] sm:table">
+      <table className="hidden w-full border-collapse text-left text-bui-base sm:table">
         <thead>
           <tr className="border-b border-border/70 bg-muted/40">
-            <th className="px-3.5 py-2 font-mono text-[10.5px] font-semibold uppercase tracking-wider text-muted-foreground/80">
+            <th className="px-3.5 py-2 font-mono text-bui-2xs font-semibold uppercase tracking-wider text-muted-foreground/80">
               Prop
             </th>
-            <th className="px-3.5 py-2 font-mono text-[10.5px] font-semibold uppercase tracking-wider text-muted-foreground/80">
+            <th className="px-3.5 py-2 font-mono text-bui-2xs font-semibold uppercase tracking-wider text-muted-foreground/80">
               Type
             </th>
-            <th className="px-3.5 py-2 font-mono text-[10.5px] font-semibold uppercase tracking-wider text-muted-foreground/80">
+            <th className="px-3.5 py-2 font-mono text-bui-2xs font-semibold uppercase tracking-wider text-muted-foreground/80">
               Default
             </th>
-            <th className="px-3.5 py-2 font-mono text-[10.5px] font-semibold uppercase tracking-wider text-muted-foreground/80">
+            <th className="px-3.5 py-2 font-mono text-bui-2xs font-semibold uppercase tracking-wider text-muted-foreground/80">
               Description
             </th>
           </tr>
@@ -31,23 +31,23 @@ export function PropsTable({ rows, className }: DocBlockPropsTable & { className
             >
               <td className="px-3.5 py-2.5 align-top">
                 <div className="flex items-center gap-1.5">
-                  <code className="font-mono text-[12.5px] font-medium text-foreground">
+                  <code className="font-mono text-bui-sm font-medium text-foreground">
                     {row.prop}
                   </code>
                   {row.required && (
-                    <span className="font-mono text-[10px] text-red-500" title="Required">
+                    <span className="font-mono text-bui-2xs text-red-500" title="Required">
                       *
                     </span>
                   )}
                 </div>
               </td>
               <td className="px-3.5 py-2.5 align-top">
-                <code className="font-mono text-[12px] text-primary/90">{row.type}</code>
+                <code className="font-mono text-bui-sm text-primary/90">{row.type}</code>
               </td>
-              <td className="px-3.5 py-2.5 align-top font-mono text-[12px] text-muted-foreground">
+              <td className="px-3.5 py-2.5 align-top font-mono text-bui-sm text-muted-foreground">
                 {row.default ?? "—"}
               </td>
-              <td className="px-3.5 py-2.5 align-top text-[12.5px] leading-relaxed text-muted-foreground">
+              <td className="px-3.5 py-2.5 align-top text-bui-sm leading-relaxed text-muted-foreground">
                 {row.description}
               </td>
             </tr>
@@ -61,21 +61,21 @@ export function PropsTable({ rows, className }: DocBlockPropsTable & { className
         {rows.map((row, i) => (
           <div key={row.prop + i} className="flex flex-col gap-1 px-3.5 py-3">
             <div className="flex flex-wrap items-center gap-1.5">
-              <code className="font-mono text-[13px] font-medium text-foreground">
+              <code className="font-mono text-bui-base font-medium text-foreground">
                 {row.prop}
               </code>
               {row.required && (
-                <span className="rounded-[3px] bg-red-500/10 px-1 font-mono text-[9px] uppercase text-red-500">
+                <span className="rounded-[3px] bg-red-500/10 px-1 font-mono text-bui-2xs uppercase text-red-500">
                   Required
                 </span>
               )}
-              <code className="font-mono text-[11px] text-primary/90">{row.type}</code>
+              <code className="font-mono text-bui-xs text-primary/90">{row.type}</code>
             </div>
-            <p className="text-[12.5px] leading-relaxed text-muted-foreground">
+            <p className="text-bui-sm leading-relaxed text-muted-foreground">
               {row.description}
             </p>
             {row.default && (
-              <p className="font-mono text-[11px] text-muted-foreground/70">
+              <p className="font-mono text-bui-xs text-muted-foreground/70">
                 Default: {row.default}
               </p>
             )}

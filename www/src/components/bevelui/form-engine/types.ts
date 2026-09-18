@@ -5,6 +5,17 @@ import type {
   UseFormProps,
   UseFormReturn,
 } from "react-hook-form";
+
+/**
+ * Minimal structural type for a standard-schema validator (zod, valibot, …).
+ * Replaces `schema?: any`, which discarded every bit of inference a form
+ * engine exists to provide.
+ */
+export type ZodLikeSchema = {
+  parse: (data: unknown) => unknown;
+  safeParse: (data: unknown) => { success: boolean; [k: string]: unknown };
+  [x: string]: unknown;
+};
 export type FormEngineMode = "multi-step" | "single";
 export type FormEngineValidation = "per-step" | "on-submit";
 
@@ -73,6 +84,27 @@ export type FieldRenderProps = {
   disabled: boolean;
 };
 
+export type TextareaProps = {
+  rows?: number;
+  maxLength?: number;
+  /** Show a live character counter when maxLength is set. */
+  showCount?: boolean;
+  [x: string]: unknown;
+};
+
+export type SelectOption = { value: string; label: string; disabled?: boolean };
+
+export type SelectProps = {
+  options: SelectOption[];
+  [x: string]: unknown;
+};
+
+export type CheckboxProps = {
+  /** Copy shown next to the control. */
+  hint?: string;
+  [x: string]: unknown;
+};
+
 export type TextInputProps = {
   icon?: React.ElementType;
   [x: string]: unknown;
@@ -83,8 +115,15 @@ export type FormEngineFieldVariant =
   | { variant: "number"; props?: TextInputProps; render?: never }
   | { variant: "email"; props?: TextInputProps; render?: never }
   | { variant: "password"; props?: TextInputProps; render?: never }
-  | { variant: "textarea"; props?: TextInputProps; render?: never }
-  | { variant: "tel"; props?: never; render?: TextInputProps }
+  | { variant: "url"; props?: TextInputProps; render?: never }
+  // `tel` read `{ props?: never; render?: TextInputProps }` — a copy-paste
+  // slip that made the one variant unable to accept props and typed its
+  // render slot as input props rather than a render function.
+  | { variant: "tel"; props?: TextInputProps; render?: never }
+  | { variant: "textarea"; props?: TextareaProps; render?: never }
+  | { variant: "select"; props?: SelectProps; render?: never }
+  | { variant: "checkbox"; props?: CheckboxProps; render?: never }
+  | { variant: "switch"; props?: CheckboxProps; render?: never }
   /**
    * Fully custom — you own the control.
    * The engine wires up value, onChange, error, and disabled for you.
@@ -173,7 +212,8 @@ export type FormEngineConfig = {
    * Full-form Zod schema applied on submit.
    * For per-step validation with field-level errors, use createZodPlugin().
    */
-  schema?: any;
+  /** Full-form schema applied on submit (zod, yup, …). */
+  schema?: ZodLikeSchema;
   steps: FormEngineStepDef[];
 };
 

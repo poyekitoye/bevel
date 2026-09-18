@@ -15,26 +15,81 @@
       "offscreen canvas"
     ],
     "slug": "cropper",
-    "prev": { "label": "Palette Editor", "href": "/docs/components/palette" },
+    "prev": {
+      "label": "Palette Editor",
+      "href": "/docs/components/palette"
+    },
     "next": {
       "label": "Rich Text Editor",
       "href": "/docs/components/rich-text"
     }
   },
   "tocs": [
-    { "id": "overview", "label": "Overview", "depth": 1 },
-    { "id": "demo", "label": "Live demo", "depth": 1 },
-    { "id": "installation", "label": "Installation", "depth": 1 },
-    { "id": "usage", "label": "Basic usage", "depth": 1 },
-    { "id": "aspect-ratio", "label": "Aspect ratio", "depth": 1 },
-    { "id": "custom-layout", "label": "Custom layout", "depth": 1 },
-    { "id": "hook", "label": "useCropper", "depth": 1 },
-    { "id": "api-root", "label": "CropperRoot", "depth": 2 },
-    { "id": "api-config", "label": "CropperConfig", "depth": 2 },
-    { "id": "api-canvas", "label": "CropperCanvas", "depth": 2 },
-    { "id": "api-preview", "label": "CropperPreview", "depth": 2 },
-    { "id": "api-hook", "label": "useCropper", "depth": 2 },
-    { "id": "internals", "label": "How it works", "depth": 1 }
+    {
+      "id": "overview",
+      "label": "Overview",
+      "depth": 1
+    },
+    {
+      "id": "demo",
+      "label": "Live demo",
+      "depth": 1
+    },
+    {
+      "id": "installation",
+      "label": "Installation",
+      "depth": 1
+    },
+    {
+      "id": "usage",
+      "label": "Basic usage",
+      "depth": 1
+    },
+    {
+      "id": "aspect-ratio",
+      "label": "Aspect ratio",
+      "depth": 1
+    },
+    {
+      "id": "custom-layout",
+      "label": "Custom layout",
+      "depth": 1
+    },
+    {
+      "id": "hook",
+      "label": "useCropper",
+      "depth": 1
+    },
+    {
+      "id": "api-root",
+      "label": "CropperRoot",
+      "depth": 2
+    },
+    {
+      "id": "api-config",
+      "label": "CropperConfig",
+      "depth": 2
+    },
+    {
+      "id": "api-canvas",
+      "label": "CropperCanvas",
+      "depth": 2
+    },
+    {
+      "id": "api-preview",
+      "label": "CropperPreview",
+      "depth": 2
+    },
+    {
+      "id": "api-hook",
+      "label": "useCropper",
+      "depth": 2
+    },
+    {
+      "id": "internals",
+      "label": "How it works",
+      "depth": 1
+    }
   ],
   "sections": [
     {
@@ -67,7 +122,7 @@
                   "highlight": true
                 },
                 {
-                  "name": "cropper-context.tsx",
+                  "name": "cropper-context.ts",
                   "type": "file",
                   "comment": "useCropper hook"
                 },
@@ -91,7 +146,10 @@
                   "type": "file",
                   "comment": "live canvas preview"
                 },
-                { "name": "index.ts", "type": "file" }
+                {
+                  "name": "index.ts",
+                  "type": "file"
+                }
               ]
             }
           ]

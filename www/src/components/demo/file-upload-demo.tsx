@@ -1,100 +1,111 @@
 "use client";
 
 import * as React from "react";
-import { FileUploadRoot } from "@/components/bevelui/file-upload";
-import { cn } from "@/lib/utils";
-import {
-  IconUpload,
-  IconPhoto,
-  IconFileText,
-  IconFileZip,
-  IconInfoCircle,
-} from "@tabler/icons-react";
+import { IconInfoCircle } from "@tabler/icons-react";
+import { FileUploadRoot, type FileEntry } from "@/components/bevelui/file-upload";
+import { DemoFeatureRow, DemoIntro, DemoOutput } from "./demo-chrome";
 
-// ─── Upload simulation ─────────────────────────────────────────────────────────
-
-async function simulateUpload(
+/**
+ * Stand-in for a real upload. It honours the AbortSignal, which is the whole
+ * point of the third argument — without it, Cancel and Remove could update the
+ * UI but never actually stop the request.
+ */
+function simulateUpload(
   file: File,
   onProgress: (pct: number) => void,
+  signal: AbortSignal,
 ): Promise<{ url: string }> {
   return new Promise((resolve, reject) => {
     let progress = 0;
-    const interval = setInterval(() => {
-      progress += Math.random() * 15 + 5;
+
+    const tick = setInterval(() => {
+      progress += Math.random() * 12 + 4;
+
       if (progress >= 100) {
-        clearInterval(interval);
+        clearInterval(tick);
+        cleanup();
         onProgress(100);
+
         if (file.name.toLowerCase().startsWith("fail")) {
-          reject(new Error(`Simulated failure — rename file to test error handling.`));
+          reject(new Error("Server rejected the file (simulated)."));
         } else {
           resolve({ url: URL.createObjectURL(file) });
         }
-      } else {
-        onProgress(Math.min(Math.round(progress), 99));
+        return;
       }
-    }, 100);
+
+      onProgress(Math.min(Math.round(progress), 99));
+    }, 220);
+
+    function onAbort() {
+      clearInterval(tick);
+      cleanup();
+      reject(new DOMException("Upload cancelled", "AbortError"));
+    }
+
+    function cleanup() {
+      signal.removeEventListener("abort", onAbort);
+    }
+
+    signal.addEventListener("abort", onAbort);
   });
 }
 
-// ─── Accepted type hints ───────────────────────────────────────────────────────
-
-const TYPE_HINTS = [
-  { icon: IconPhoto,    label: "Images",    ext: "PNG, JPG, WEBP" },
-  { icon: IconFileText, label: "Documents", ext: "PDF, DOCX"      },
-  { icon: IconFileZip,  label: "Archives",  ext: "ZIP, TAR"       },
-];
-
-// ─── Demo ──────────────────────────────────────────────────────────────────────
-
 export function FileUploadDemo() {
+  const [completed, setCompleted] = React.useState<
+    { name: string; url?: string }[] | undefined
+  >();
+
   return (
-    <div className="w-full max-w-xl flex flex-col gap-4">
-      {/* Context header */}
-      <div className="flex items-center justify-between px-1">
-        <div className="flex items-center gap-2">
-          <IconUpload size={14} className="text-muted-foreground" />
-          <span className="text-[13px] font-semibold text-foreground">Upload assets</span>
-        </div>
-        <span className="text-[11px] text-muted-foreground/60">up to 10MB · 8 files max</span>
-      </div>
+    <div className="flex w-full max-w-xl flex-col gap-4">
+      <DemoIntro eyebrow="File Upload">
+        Drop a few files and watch them queue. Uploads run three at a time,
+        Cancel aborts the request in flight rather than just hiding the row, and
+        anything the dropzone turns away appears as a failed entry instead of
+        vanishing without explanation.
+      </DemoIntro>
 
-      {/* Accepted types */}
-      <div className="flex gap-2 flex-wrap">
-        {TYPE_HINTS.map((t) => (
-          <div
-            key={t.label}
-            className="flex items-center gap-1.5 px-2.5 py-1 rounded-md bg-muted/30 border border-border/50 text-[11px] text-muted-foreground/70"
-          >
-            <t.icon size={12} />
-            <span className="font-medium">{t.label}</span>
-            <span className="text-muted-foreground/40">{t.ext}</span>
-          </div>
-        ))}
-      </div>
-
-      {/* Uploader */}
       <FileUploadRoot
         onUpload={simulateUpload}
         config={{
           multiple: true,
           maxFiles: 8,
-          maxSize: 10 * 1024 * 1024,
+          maxSize: 2 * 1024 * 1024,
+          concurrency: 3,
           title: "Drop files here, or click to browse",
-          description: "Any file type · up to 10 MB per file",
         }}
-        onComplete={(files) =>
-          console.log("All uploaded:", files.map((f) => f.url))
+        // Fires once the batch settles, with the final entries — URLs included.
+        onComplete={(files: FileEntry[]) =>
+          setCompleted(
+            files.map((f) => ({ name: f.file.name, url: f.url })),
+          )
         }
-        onError={(id, err) => console.error("Upload error:", id, err)}
       />
 
-      {/* Error test hint */}
+      <DemoFeatureRow
+        items={[
+          "AbortSignal cancel",
+          "concurrency: 3",
+          "rejections shown",
+          "retry on failure",
+          "grid / list",
+        ]}
+      />
+
       <div className="flex items-start gap-1.5 px-1">
-        <IconInfoCircle size={12} className="text-muted-foreground/40 mt-0.5 shrink-0" />
-        <span className="text-[11px] text-muted-foreground/40 font-mono leading-relaxed">
-          Name a file <code className="text-muted-foreground/60">fail…</code> to simulate an upload error
-        </span>
+        <IconInfoCircle
+          size={12}
+          aria-hidden
+          className="mt-0.5 shrink-0 text-muted-foreground/40"
+        />
+        <p className="font-mono text-bui-xs leading-relaxed text-muted-foreground/60">
+          Name a file{" "}
+          <code className="text-muted-foreground">fail…</code> to force an
+          error, or drop something over 2 MB to see a rejection surface.
+        </p>
       </div>
+
+      {completed && <DemoOutput label="onComplete" value={completed} />}
     </div>
   );
 }

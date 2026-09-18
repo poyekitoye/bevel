@@ -15,14 +15,14 @@ export function Steps({ steps, className }: DocBlockSteps & { className?: string
               <span className="absolute left-[13px] top-7 h-[calc(100%-1.75rem)] w-px bg-border" />
             )}
 
-            <span className="relative z-10 flex h-[26px] w-[26px] shrink-0 items-center justify-center rounded-full border border-border bg-card font-mono text-[11px] font-semibold text-foreground">
+            <span className="relative z-10 flex h-[26px] w-[26px] shrink-0 items-center justify-center rounded-full border border-border bg-card font-mono text-bui-xs font-semibold text-foreground">
               {i + 1}
             </span>
 
             <div className="min-w-0 flex-1 pt-0.5">
-              <p className="text-[14px] font-medium text-foreground">{step.title}</p>
+              <p className="text-bui-md font-medium text-foreground">{step.title}</p>
               {step.description && (
-                <p className="mt-1 text-[13px] leading-relaxed text-muted-foreground">
+                <p className="mt-1 text-bui-base leading-relaxed text-muted-foreground">
                   {step.description}
                 </p>
               )}

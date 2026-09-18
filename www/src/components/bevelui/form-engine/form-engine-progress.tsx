@@ -94,7 +94,7 @@ function CircleProgress({
             animate={{ opacity: 1, scale: 1 }}
             exit={{ opacity: 0, scale: 0.7 }}
             transition={{ duration: 0.15 }}
-            className="text-[10px] font-semibold tabular-nums text-foreground/70 leading-none"
+            className="text-bui-2xs font-semibold tabular-nums text-foreground/70 leading-none"
             style={{ fontSize: size < 44 ? 9 : 11 }}
           >
             {current + 1}/{total}

@@ -1,16 +1,17 @@
 "use client";
 
-import { cn } from "@/lib/utils";
+import * as React from "react";
 import { cva } from "class-variance-authority";
-import { type ReactNode, useState } from "react";
-import { Badge } from "@/components/ui/badge";
 import { IconCheck } from "@tabler/icons-react";
+import { cn } from "@/lib/utils";
+import { Badge } from "@/components/ui/badge";
+import { useControllableState } from "../lib/use-controllable-state";
 
 export interface CardSelectOption<T = string> {
   value: T;
   label: string;
   description?: string;
-  icon?: ReactNode;
+  icon?: React.ReactNode;
   badge?: string;
   disabled?: boolean;
 }
@@ -19,32 +20,34 @@ type CardSelectSharedProps<T = string> = {
   layout?: "grid" | "list" | "scroll";
   columns?: 1 | 2 | 3 | 4;
   size?: "sm" | "md" | "lg";
+  /** Accessible name for the group. */
+  label?: string;
   className?: string;
   options: CardSelectOption<T>[];
 };
 
-type SingleControlled<T = string> = {
+type SingleControlled<T> = {
   multiple?: false;
   value: T;
   defaultValue?: never;
   onChange: (value: T) => void;
 };
-type SingleUncontrolled<T = string> = {
+type SingleUncontrolled<T> = {
   multiple?: false;
-  value?: never;
+  value?: T;
   defaultValue?: T;
   onChange?: (value: T) => void;
 };
-type MultiControlled<T = string> = {
+type MultiControlled<T> = {
   multiple: true;
   value: T[];
   defaultValue?: never;
   onChange: (value: T[]) => void;
   max?: number;
 };
-type MultiUncontrolled<T = string> = {
+type MultiUncontrolled<T> = {
   multiple: true;
-  value?: never;
+  value?: T[];
   defaultValue?: T[];
   onChange?: (value: T[]) => void;
   max?: number;
@@ -58,30 +61,24 @@ export type CardSelectProps<T = string> = CardSelectSharedProps<T> &
     | MultiUncontrolled<T>
   );
 
+// The focus ring lives on the button, so these variants describe the card's
+// surface only. The original duplicated focus-visible and disabled: styles
+// here on a <div>, where neither variant can ever match.
 const cardVariants = cva(
-  [
-    "group relative w-full rounded-lg border bg-transparent text-left",
-    "transition-colors duration-150",
-    "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2",
-    "disabled:pointer-events-none disabled:opacity-50",
-  ],
+  ["relative flex w-full items-start rounded-lg border text-left", "transition-colors duration-150"],
   {
     variants: {
       selected: {
         true: "border-primary bg-primary/5",
-        false:
-          "border-input hover:border-accent-foreground/20 hover:bg-accent/40",
+        false: "border-input hover:border-accent-foreground/20 hover:bg-accent/40",
       },
       size: {
-        sm: "p-3 gap-2",
-        md: "p-4 gap-3",
-        lg: "p-5 gap-4",
+        sm: "gap-2 p-3",
+        md: "gap-3 p-4",
+        lg: "gap-4 p-5",
       },
     },
-    defaultVariants: {
-      selected: false,
-      size: "md",
-    },
+    defaultVariants: { selected: false, size: "md" },
   },
 );
 
@@ -93,30 +90,23 @@ const indicatorVariants = cva(
         true: "border-primary bg-primary text-primary-foreground",
         false: "border-input bg-transparent",
       },
-      multiple: {
-        true: "rounded-sm",
-        false: "rounded-full",
-      },
-      size: {
-        sm: "size-3.5",
-        md: "size-4",
-        lg: "size-[18px]",
-      },
+      multiple: { true: "rounded-sm", false: "rounded-full" },
+      size: { sm: "size-3.5", md: "size-4", lg: "size-[18px]" },
     },
-    defaultVariants: {
-      selected: false,
-      multiple: false,
-      size: "md",
-    },
+    defaultVariants: { selected: false, multiple: false, size: "md" },
   },
 );
 
 const COLS = {
   1: "grid-cols-1",
-  2: "grid-cols-2",
-  3: "grid-cols-3",
-  4: "grid-cols-4",
+  2: "grid-cols-1 sm:grid-cols-2",
+  3: "grid-cols-1 sm:grid-cols-2 lg:grid-cols-3",
+  4: "grid-cols-2 lg:grid-cols-4",
 } as const;
+
+const LABEL_SIZE = { sm: "text-bui-base", md: "text-bui-md", lg: "text-bui-lg" } as const;
+const DESC_SIZE = { sm: "text-bui-sm", md: "text-bui-base", lg: "text-bui-md" } as const;
+const CHECK_SIZE = { sm: "size-2", md: "size-2.5", lg: "size-3" } as const;
 
 function CardItem<T>({
   option,
@@ -130,74 +120,45 @@ function CardItem<T>({
   size?: "sm" | "md" | "lg";
 }) {
   return (
-    <div
-      className={cn(
-        cardVariants({ selected: isSelected, size }),
-        "flex items-start",
-      )}
-    >
-      {/* Indicator */}
-      <div
+    <span className={cn(cardVariants({ selected: isSelected, size }))}>
+      <span
         className={cn(
-          indicatorVariants({
-            selected: isSelected,
-            multiple: isMultiple,
-            size,
-          }),
+          indicatorVariants({ selected: isSelected, multiple: isMultiple, size }),
           "mt-0.5",
         )}
         aria-hidden
       >
         {isSelected && (
-          <IconCheck
-            className={cn(
-              size === "sm" ? "size-2" : size === "lg" ? "size-3" : "size-2.5",
-              "stroke-[2.5]",
-            )}
-          />
+          <IconCheck className={cn(CHECK_SIZE[size], "stroke-[2.5]")} />
         )}
-      </div>
+      </span>
 
-      {/* Content */}
-      <div className="ml-3 flex min-w-0 flex-1 flex-col gap-0.5">
-        <div className="flex items-center gap-2">
+      <span className="flex min-w-0 flex-1 flex-col gap-0.5">
+        <span className="flex items-center gap-2">
           {option.icon && (
-            <span className="shrink-0 text-muted-foreground">
+            <span className="shrink-0 text-muted-foreground" aria-hidden>
               {option.icon}
             </span>
           )}
-          <span
-            className={cn(
-              "font-medium leading-snug",
-              size === "sm"
-                ? "text-sm"
-                : size === "lg"
-                  ? "text-base"
-                  : "text-sm",
-              isSelected ? "text-foreground" : "text-foreground",
-            )}
-          >
+          {/* The original branched on isSelected to pick between two identical
+              classes — a ternary with the same value on both sides. */}
+          <span className={cn("font-medium leading-snug text-foreground", LABEL_SIZE[size])}>
             {option.label}
           </span>
           {option.badge && (
-            <Badge variant="secondary" className="ml-auto shrink-0 text-xs">
+            <Badge variant="secondary" className="ml-auto shrink-0">
               {option.badge}
             </Badge>
           )}
-        </div>
+        </span>
 
         {option.description && (
-          <p
-            className={cn(
-              "leading-snug text-muted-foreground",
-              size === "sm" ? "text-xs" : "text-sm",
-            )}
-          >
+          <span className={cn("leading-snug text-muted-foreground", DESC_SIZE[size])}>
             {option.description}
-          </p>
+          </span>
         )}
-      </div>
-    </div>
+      </span>
+    </span>
   );
 }
 
@@ -206,90 +167,122 @@ export function CardSelect<T = string>({
   layout = "list",
   columns = 1,
   size = "md",
+  label,
   className,
   multiple,
-  ...props
+  value,
+  defaultValue,
+  onChange,
+  ...rest
 }: CardSelectProps<T>) {
-  const isControlled = "value" in props && props.value !== undefined;
+  const max = (rest as { max?: number }).max;
+  const listRef = React.useRef<HTMLDivElement>(null);
 
-  const [internalSingle, setInternalSingle] = useState<T | undefined>(
-    !multiple && !isControlled
-      ? (props as SingleUncontrolled<T>).defaultValue
-      : undefined,
-  );
-  const [internalMulti, setInternalMulti] = useState<T[]>(
-    multiple && !isControlled
-      ? ((props as MultiUncontrolled<T>).defaultValue ?? [])
-      : [],
-  );
+  const [single, setSingle] = useControllableState<T | undefined>({
+    value: multiple ? undefined : (value as T | undefined),
+    defaultValue: multiple ? undefined : (defaultValue as T | undefined),
+    onChange: multiple
+      ? undefined
+      : (onChange as ((v: T | undefined) => void) | undefined),
+  });
 
-  const currentSingle = !multiple
-    ? isControlled
-      ? (props as SingleControlled<T>).value
-      : internalSingle
-    : undefined;
-
-  const currentMulti = multiple
-    ? isControlled
-      ? (props as MultiControlled<T>).value
-      : internalMulti
-    : [];
-
-  const max = multiple
-    ? (props as MultiControlled<T> | MultiUncontrolled<T>).max
-    : undefined;
+  const [multi, setMulti] = useControllableState<T[]>({
+    value: multiple ? (value as T[] | undefined) : undefined,
+    defaultValue: multiple ? ((defaultValue as T[]) ?? []) : [],
+    onChange: multiple ? (onChange as ((v: T[]) => void) | undefined) : undefined,
+  });
 
   const isSelected = (val: T) =>
-    multiple ? currentMulti.includes(val) : currentSingle === val;
+    multiple ? (multi ?? []).includes(val) : single === val;
 
   const handleSelect = (val: T) => {
     if (multiple) {
-      const next = currentMulti.includes(val)
-        ? currentMulti.filter((v) => v !== val)
-        : max && currentMulti.length >= max
-          ? currentMulti
-          : [...currentMulti, val];
-      if (!isControlled) setInternalMulti(next);
-      (props as MultiControlled<T>).onChange?.(next);
+      const current = multi ?? [];
+      const next = current.includes(val)
+        ? current.filter((v) => v !== val)
+        : max && current.length >= max
+          ? current
+          : [...current, val];
+      setMulti(next);
     } else {
-      if (!isControlled) setInternalSingle(val);
-      (props as SingleControlled<T>).onChange?.(val);
+      setSingle(val);
     }
   };
 
+  const enabled = options.filter((o) => !o.disabled);
+
+  // Radio groups are a single tab stop with arrow-key movement between
+  // options. The original left every card independently tabbable.
+  function onKeyDown(e: React.KeyboardEvent) {
+    if (multiple) return;
+    const keys = ["ArrowDown", "ArrowRight", "ArrowUp", "ArrowLeft", "Home", "End"];
+    if (!keys.includes(e.key)) return;
+
+    e.preventDefault();
+    const index = enabled.findIndex((o) => isSelected(o.value));
+    let next: number;
+
+    if (e.key === "Home") next = 0;
+    else if (e.key === "End") next = enabled.length - 1;
+    else if (e.key === "ArrowDown" || e.key === "ArrowRight")
+      next = (index + 1) % enabled.length;
+    else next = (index - 1 + enabled.length) % enabled.length;
+
+    const option = enabled[next];
+    if (!option) return;
+    handleSelect(option.value);
+    listRef.current
+      ?.querySelectorAll<HTMLButtonElement>("[data-card-option]")
+      [options.indexOf(option)]?.focus();
+  }
+
   return (
     <div
+      ref={listRef}
       role={multiple ? "group" : "radiogroup"}
+      aria-label={label ?? (multiple ? "Select options" : "Select an option")}
+      onKeyDown={onKeyDown}
       className={cn(
-        "grid",
-        layout === "grid" ? COLS[columns as keyof typeof COLS] : "grid-cols-1",
-        layout === "scroll" && "overflow-x-auto",
-        "gap-2",
+        layout === "scroll"
+          ? // The original set overflow-x-auto but kept grid-cols-1, so the
+            // "scroll" layout stacked vertically and never scrolled.
+            "no-scrollbar flex snap-x snap-mandatory gap-2 overflow-x-auto pb-1"
+          : cn("grid gap-2", layout === "grid" ? COLS[columns] : "grid-cols-1"),
         className,
       )}
     >
-      {options.map((option, i) => (
-        <button
-          key={String(option.value) + i}
-          type="button"
-          role={multiple ? "checkbox" : "radio"}
-          aria-checked={isSelected(option.value)}
-          disabled={option.disabled}
-          onClick={() => !option.disabled && handleSelect(option.value)}
-          className={cn(
-            "w-full rounded-lg outline-none",
-            "focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2",
-            option.disabled && "cursor-not-allowed",
-          )}
-        >
-          <CardItem
-            option={option}
-            isSelected={isSelected(option.value)}
-            isMultiple={!!multiple}
-            size={size}
-          />
-        </button>
-      ))}
+      {options.map((option) => {
+        const selected = isSelected(option.value);
+        return (
+          <button
+            key={String(option.value)}
+            data-card-option
+            type="button"
+            role={multiple ? "checkbox" : "radio"}
+            aria-checked={selected}
+            disabled={option.disabled}
+            tabIndex={
+              multiple ? 0 : selected || (!single && options[0] === option) ? 0 : -1
+            }
+            onClick={() => handleSelect(option.value)}
+            className={cn(
+              "rounded-lg outline-none",
+              layout === "scroll" && "w-64 shrink-0 snap-start",
+              "focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2",
+              option.disabled && "cursor-not-allowed opacity-50",
+            )}
+          >
+            <CardItem
+              option={option}
+              isSelected={selected}
+              isMultiple={!!multiple}
+              size={size}
+            />
+          </button>
+        );
+      })}
     </div>
   );
 }
+
+CardSelect.displayName = "CardSelect";

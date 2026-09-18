@@ -1,8 +1,13 @@
+import type React from "react";
+
 export interface ResizablePanelConfig {
-  minSize?: number; // percentage, default 10
-  maxSize?: number; // percentage, default 90
+  /** Percentage. Default 5. */
+  minSize?: number;
+  /** Percentage. Default 95. */
+  maxSize?: number;
   collapsible?: boolean;
-  collapsedSize?: number; // percentage when collapsed, default 0
+  /** Percentage when collapsed. Default 0. */
+  collapsedSize?: number;
   defaultCollapsed?: boolean;
 }
 
@@ -11,10 +16,15 @@ export interface ResizableContextValue {
   collapsed: boolean[];
   direction: "horizontal" | "vertical";
   containerRef: React.RefObject<HTMLDivElement | null>;
-  // Imperative resize — called by handle during drag (direct DOM write)
+  /** True while a handle is being dragged. */
+  isDragging: boolean;
+  /** Imperative resize during drag — writes CSS vars, bypassing React. */
   setSizeDirect: (index: number, size: number) => void;
-  // Called on drag end — commits to React state
+  /** Commits the final sizes to React state. */
   commitSizes: (sizes: number[]) => void;
+  /** Suspends state→DOM mirroring for the duration of a gesture. */
+  beginDrag: () => void;
+  endDrag: () => void;
   toggleCollapse: (panelIndex: number) => void;
   panelConfigs: ResizablePanelConfig[];
 }

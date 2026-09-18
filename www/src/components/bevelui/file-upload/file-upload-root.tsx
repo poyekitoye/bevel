@@ -1,4 +1,7 @@
-import React from "react";
+"use client";
+
+import * as React from "react";
+import { TooltipProvider } from "@/components/ui/tooltip";
 import {
   FileUploadProvider,
   type FileUploadProviderProps,
@@ -6,45 +9,44 @@ import {
 import { FileUploadDropzone } from "./file-upload-dropzone";
 import { FileUploadList } from "./file-upload-list";
 
-interface FileUploadRootProps extends FileUploadProviderProps {
-  /** Render custom children instead of the default dropzone + list layout */
+export interface FileUploadRootProps extends FileUploadProviderProps {
+  /** Replace the default dropzone + list layout. */
   children?: React.ReactNode;
+  className?: string;
 }
 
 /**
- * FileUploadRoot — single import that composes the full system.
+ * FileUploadRoot — composes the full system behind one import.
  *
- * Uses default layout (dropzone + list) unless you pass children.
- *
- * @example — default layout
+ * @example
  * <FileUploadRoot
  *   config={{ maxSize: 5 * 1024 * 1024, accept: { "image/*": [] } }}
- *   onUpload={async (file, onProgress) => {
- *     const url = await uploadToS3(file, onProgress);
+ *   onUpload={async (file, onProgress, signal) => {
+ *     const url = await uploadToS3(file, onProgress, signal);
  *     return { url };
  *   }}
+ *   onComplete={(files) => console.log(files.map((f) => f.url))}
  * />
- *
- * @example — custom layout
- * <FileUploadRoot onUpload={...}>
- *   <MyCustomDropzone />
- *   <MyCustomList />
- * </FileUploadRoot>
  */
 export function FileUploadRoot({
   children,
+  className,
   ...providerProps
 }: FileUploadRootProps) {
   return (
     <FileUploadProvider {...providerProps}>
-      <div className="flex flex-col gap-4 w-full">
-        {children ?? (
-          <>
-            <FileUploadDropzone />
-            <FileUploadList />
-          </>
-        )}
-      </div>
+      <TooltipProvider delayDuration={300}>
+        <div className={`flex w-full flex-col gap-4 ${className ?? ""}`}>
+          {children ?? (
+            <>
+              <FileUploadDropzone />
+              <FileUploadList />
+            </>
+          )}
+        </div>
+      </TooltipProvider>
     </FileUploadProvider>
   );
 }
+
+FileUploadRoot.displayName = "FileUploadRoot";

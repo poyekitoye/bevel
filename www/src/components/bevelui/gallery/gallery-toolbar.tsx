@@ -70,7 +70,7 @@ export function GalleryToolbar() {
       {mode === "multi" && (
         <div className="flex items-center gap-2">
           {hasSelection && (
-            <span className="text-[11px] text-muted-foreground">
+            <span className="text-bui-xs text-muted-foreground">
               {selectedIds.size} selected
             </span>
           )}
@@ -91,7 +91,7 @@ export function GalleryToolbar() {
         </div>
       )}
 
-      <span className="text-[11px] text-muted-foreground ml-auto">
+      <span className="text-bui-xs text-muted-foreground ml-auto">
         {items.length} item{items.length !== 1 ? "s" : ""}
       </span>
     </div>

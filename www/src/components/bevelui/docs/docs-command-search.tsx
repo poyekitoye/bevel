@@ -111,8 +111,8 @@ export function DocsCommandSearch({
           // the sidebar, topbar, and landing-page filter input — the old
           // rounded-full pill was the one rounded element left in an
           // otherwise hairline, rounded-md system.
-          "w-full justify-start rounded-md border border-border/70 bg-muted/40 text-[13px] text-muted-foreground hover:bg-muted/60",
-          size === "sm" ? "h-9 lg:w-64" : "h-11 text-[14px]",
+          "w-full justify-start rounded-md border border-border/70 bg-muted/40 text-bui-base text-muted-foreground hover:bg-muted/60",
+          size === "sm" ? "h-9 lg:w-64" : "h-11 text-bui-md",
           className,
         )}
       />

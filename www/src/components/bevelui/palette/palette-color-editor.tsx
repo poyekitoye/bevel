@@ -174,7 +174,7 @@ export function PaletteColorEditor() {
               onChange={(e) => handleHexInput(e.target.value)}
               className={cn(
                 "flex-1 h-9 px-2 rounded-md bg-muted/50 border border-border",
-                "text-[12px]  text-foreground outline-none",
+                "text-bui-sm  text-foreground outline-none",
                 "focus:ring-1 focus:ring-primary transition",
               )}
               spellCheck={false}
@@ -188,7 +188,7 @@ export function PaletteColorEditor() {
             placeholder="Color name (optional)"
             className={cn(
               "h-9 px-2 rounded-md bg-muted/50 border border-border",
-              "text-[12px] text-foreground outline-none placeholder:text-muted-foreground/40",
+              "text-bui-sm text-foreground outline-none placeholder:text-muted-foreground/40",
               "focus:ring-1 focus:ring-primary transition",
             )}
           />

@@ -5,6 +5,7 @@ import { useCursors } from "./cursors-context";
 import { throttle } from "./cursor-utils";
 import type { CursorMeta } from "./types";
 import { cn } from "@/lib/utils";
+import { getContrastColor } from "../lib/color";
 
 // ─── Cursor arrow SVG ─────────────────────────────────────────────────────────
 // Hotspot at (0, 0) — the tip of the arrow.
@@ -92,12 +93,17 @@ function CursorElement({ meta }: { meta: CursorMeta }) {
         className="absolute top-0 left-0 will-change-transform"
         style={{ transform: "translate(12px, 8px)" }}
       >
+        {/* Foreground derived from the user colour rather than a hardcoded
+            text-white, which was unreadable on any light presence colour. */}
         <span
           className={cn(
-            "block px-1.5 py-0.5 rounded text-[11px] font-medium",
-            "text-white whitespace-nowrap leading-4 shadow-sm",
+            "block rounded px-1.5 py-0.5 text-bui-xs font-medium",
+            "whitespace-nowrap leading-4 shadow-sm",
           )}
-          style={{ backgroundColor: meta.color }}
+          style={{
+            backgroundColor: meta.color,
+            color: getContrastColor(meta.color),
+          }}
         >
           {meta.userName}
         </span>

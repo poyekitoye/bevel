@@ -1,7 +1,9 @@
-import { motion } from "framer-motion";
-import { cn } from "@/lib/utils";
+"use client";
+
+import * as React from "react";
+import { AnimatePresence, motion } from "motion/react";
 import {
-  Icon,
+  type Icon,
   IconMessage,
   IconMoodAngry,
   IconMoodAngryFilled,
@@ -14,196 +16,206 @@ import {
   IconMoodSmile,
   IconMoodSmileFilled,
 } from "@tabler/icons-react";
-import { AnimatePresence } from "motion/react";
-import { useState } from "react";
+import { cn } from "@/lib/utils";
 import { Textarea } from "@/components/ui/textarea";
-import { RatingField } from "../controls/rating-field";
 import { Button } from "@/components/ui/button";
+import { RatingField } from "../controls/rating-field";
+import { useControllableState } from "../lib/use-controllable-state";
+import { usePrefersReducedMotion } from "../lib/use-element-rect";
+
+export type Feedback = { rating: number; comment?: string };
+
+export interface FeedbackLevel {
+  /** Announced and shown under the scale when this level is active. */
+  label: string;
+  color: string;
+  icon?: Icon;
+  emptyIcon?: Icon;
+}
+
+interface FeedbackModuleControlled {
+  value: Feedback;
+  defaultValue?: never;
+  onChange: (feedback: Feedback) => void;
+}
+
+interface FeedbackModuleUncontrolled {
+  value?: Feedback;
+  defaultValue?: Feedback;
+  onChange?: (feedback: Feedback) => void;
+}
+
+export type FeedbackModuleProps = {
+  title?: string;
+  subtitle?: string;
+  placeholder?: string;
+  submitLabel?: string;
+  showComment?: boolean;
+  /** Require a comment before submit becomes available. */
+  requireComment?: boolean;
+  isLoading?: boolean;
+  levels?: FeedbackLevel[];
+  onSubmit?: (data: Feedback) => void;
+  className?: string;
+} & (FeedbackModuleControlled | FeedbackModuleUncontrolled);
+
+const DEFAULT_LEVELS: FeedbackLevel[] = [
+  {
+    label: "Very poor",
+    color: "var(--color-red-500)",
+    icon: IconMoodAngryFilled,
+    emptyIcon: IconMoodAngry,
+  },
+  {
+    label: "Poor",
+    color: "var(--color-orange-400)",
+    icon: IconMoodSadFilled,
+    emptyIcon: IconMoodSad,
+  },
+  {
+    label: "Okay",
+    color: "var(--color-amber-400)",
+    icon: IconMoodNeutralFilled,
+    emptyIcon: IconMoodNeutral,
+  },
+  {
+    label: "Good",
+    color: "var(--color-emerald-400)",
+    icon: IconMoodSmileFilled,
+    emptyIcon: IconMoodSmile,
+  },
+  {
+    label: "Excellent",
+    color: "var(--color-green-400)",
+    icon: IconMoodHappyFilled,
+    emptyIcon: IconMoodHappy,
+  },
+];
 
 function FeedbackModule({
-  value,
+  title = "How was your experience?",
+  subtitle = "Your feedback helps us improve.",
+  placeholder = "Share more details about your experience…",
+  submitLabel = "Send feedback",
   showComment = true,
+  requireComment = false,
   isLoading,
-  title,
-  subtitle,
-  placeholder = "Share more details about your experience...",
-  submitLabel = "Send Feedback",
-  levels = [
-    {
-      label: "Unprofessional",
-      color: "#fb2c36",
-      icon: IconMoodAngryFilled,
-      emptyIcon: IconMoodAngry,
-    },
-    {
-      label: "Needs Improvement",
-      color: "#ff8904",
-      icon: IconMoodSadFilled,
-      emptyIcon: IconMoodSad,
-    },
-    {
-      label: "Good Service",
-      color: "#fdc700",
-      icon: IconMoodNeutralFilled,
-      emptyIcon: IconMoodNeutral,
-    },
-    {
-      label: "Great Insight",
-      color: "#00d492",
-      icon: IconMoodSmileFilled,
-      emptyIcon: IconMoodSmile,
-    },
-    {
-      label: "Exceptional Expertise",
-      color: "#05df72",
-      icon: IconMoodHappyFilled,
-      emptyIcon: IconMoodHappy,
-    },
-  ],
+  levels = DEFAULT_LEVELS,
   onSubmit,
   className,
-  ...props
+  value,
+  defaultValue,
+  onChange,
 }: FeedbackModuleProps) {
-  const [hover, setHover] = useState(0);
-  const isControlled = "value" in props && props.value !== undefined;
-  const [internalValue, setInternalValue] = useState<Feedback | undefined>(
-    !isControlled
-      ? (props as FeedbackModuleUncontrolled).defaultValue
-      : undefined,
-  );
-  const currentValue = (isControlled
-    ? (props as FeedbackModuleControlled).value
-    : internalValue) || { rating: 0 };
-  const { rating, comment } = currentValue;
-  const currentDisplay = hover || internalValue?.rating || 0;
+  const reduceMotion = usePrefersReducedMotion();
+  const [hover, setHover] = React.useState(0);
 
-  const handleChange = (val: Feedback) => {
-    if (!isControlled) setInternalValue(val);
-    props.onChange?.(val);
-  };
+  // The original derived `isControlled` from a rest object that `value` had
+  // already been destructured out of, so it was permanently false and the
+  // component ignored every controlled update it was handed.
+  const [feedback, setFeedback] = useControllableState<Feedback>({
+    value,
+    defaultValue: defaultValue ?? { rating: 0 },
+    onChange,
+  });
+
+  const rating = feedback?.rating ?? 0;
+  const comment = feedback?.comment ?? "";
+
+  // Levels are 1-indexed against the rating; hovering previews that level's
+  // label. These labels were defined in the original but never reached the UI.
+  const activeLevel = levels[(hover || rating) - 1];
+
+  const canSubmit =
+    rating > 0 && (!requireComment || comment.trim().length > 0) && !isLoading;
+
   const handleSubmit = () => {
-    onSubmit?.({ rating, comment });
-    handleChange({ rating, comment });
+    if (!canSubmit) return;
+    onSubmit?.({ rating, comment: comment || undefined });
   };
+
+  const collapse = reduceMotion
+    ? {}
+    : {
+        initial: { height: 0, opacity: 0 },
+        animate: { height: "auto" as const, opacity: 1 },
+        exit: { height: 0, opacity: 0 },
+        transition: { duration: 0.2, ease: [0.16, 1, 0.3, 1] as const },
+      };
 
   return (
-    <div className="relative overflow-hidden md:p-4 rounded-3xl w-full">
-      <div className="relative z-10 flex flex-col gap-6">
-        {/* Header Section */}
-        <div className="text-center space-y-3 flex flex-col items-center">
-          <motion.span layout className="text-lg ">
-            {title}
-          </motion.span>
-          <motion.p
-            layout
-            className="text-sm text-muted-foreground max-w-[250px] leading-relaxed"
-          >
-            {subtitle}
-          </motion.p>
+    <div className={cn("w-full rounded-2xl md:p-4", className)}>
+      <div className="flex flex-col gap-6">
+        <div className="flex flex-col items-center gap-2 text-center">
+          <h3 className="text-bui-lg font-semibold text-foreground">{title}</h3>
+          {subtitle && (
+            <p className="max-w-[28ch] text-bui-base leading-relaxed text-muted-foreground">
+              {subtitle}
+            </p>
+          )}
         </div>
 
-        {/* Interactive Stars */}
-        <div className="flex justify-center gap-1.5 ">
+        <div className="flex flex-col items-center gap-2">
           <RatingField
-            max={levels.length || 5}
+            max={levels.length}
             value={rating}
-            onHover={setHover}
-            levels={levels}
             single
-            onChange={(val) => handleChange({ comment: comment, rating: val })}
+            levels={levels}
+            label="Rate your experience"
+            onHover={setHover}
+            onChange={(next) => setFeedback({ rating: next, comment })}
           />
-        </div>
 
-        {/* Status Feedback */}
-        <div className="h-12 flex flex-col items-center justify-center w-full bg-secondary/30 rounded-xl border border-border/40 overflow-hidden">
-          <AnimatePresence mode="wait">
-            {currentDisplay > 0 ? (
-              <motion.div
-                key={currentDisplay}
-                initial={{ y: 20, opacity: 0 }}
-                animate={{ y: 0, opacity: 1 }}
-                exit={{ y: -20, opacity: 0 }}
-                className="flex flex-col items-center gap-1"
-              >
-                <span
-                  style={{
-                    color: levels[currentDisplay - 1].color,
-                  }}
-                  className={cn(
-                    `text-xs font-semibold capitalize tracking-tight`,
-                  )}
-                >
-                  {levels[currentDisplay - 1].label}
-                </span>
-                <div className="flex gap-1">
-                  {[...Array(5)].map((_, i) => (
-                    <motion.div
-                      key={i}
-                      animate={{
-                        width: i < currentDisplay ? 16 : 4,
-                        opacity: i < currentDisplay ? 1 : 0.3,
-                        ...(levels[i]?.color && {
-                          backgroundColor: levels[currentDisplay - 1]?.color,
-                        }),
-                      }}
-                      className={cn(
-                        `h-1 rounded-full`,
-                        i < currentDisplay
-                          ? "bg-primary"
-                          : "bg-muted-foreground",
-                      )}
-                    />
-                  ))}
-                </div>
-              </motion.div>
-            ) : (
+          {/* Reserve the line's height so naming the level does not shift the
+              layout every time the pointer crosses a star. */}
+          <div className="flex h-4 items-center">
+            <AnimatePresence mode="wait" initial={false}>
               <motion.span
-                initial={{ opacity: 0 }}
-                animate={{ opacity: 1 }}
-                className="text-[10px] text-muted-foreground font-bold uppercase tracking-widest"
+                key={activeLevel?.label ?? "empty"}
+                initial={reduceMotion ? false : { opacity: 0, y: 2 }}
+                animate={{ opacity: 1, y: 0 }}
+                exit={reduceMotion ? undefined : { opacity: 0, y: -2 }}
+                transition={{ duration: 0.12 }}
+                className="text-bui-2xs font-semibold uppercase tracking-widest text-muted-foreground"
               >
-                Tap a star to begin
+                {activeLevel?.label ?? "Tap a star to begin"}
               </motion.span>
-            )}
-          </AnimatePresence>
+            </AnimatePresence>
+          </div>
         </div>
 
-        {/* Review Input Section */}
         {showComment && (
-          <AnimatePresence>
+          <AnimatePresence initial={false}>
             {rating > 0 && (
-              <motion.div
-                initial={{ height: 0, opacity: 0 }}
-                animate={{ height: "auto", opacity: 1 }}
-                exit={{ height: 0, opacity: 0 }}
-                className="flex flex-col gap-4 "
-              >
-                <div className="relative">
-                  <div className="absolute left-3 top-3">
-                    <IconMessage className="size-4 text-muted-foreground/50" />
+              <motion.div {...collapse} className="overflow-hidden">
+                <div className="flex flex-col gap-4 pt-1">
+                  <div className="relative">
+                    <IconMessage
+                      className="pointer-events-none absolute left-3 top-3 size-4 text-muted-foreground/50"
+                      aria-hidden
+                    />
+                    <Textarea
+                      value={comment}
+                      onChange={(e) =>
+                        setFeedback({ rating, comment: e.target.value })
+                      }
+                      placeholder={placeholder}
+                      aria-label="Additional feedback"
+                      className="max-h-[120px] min-h-[100px] resize-none rounded-xl pl-9"
+                    />
                   </div>
-                  <Textarea
-                    value={comment}
-                    onChange={(e) =>
-                      handleChange({
-                        rating,
-                        comment: e.target.value,
-                      })
-                    }
-                    placeholder={placeholder}
-                    className="min-h-[100px] max-h-[120px] pl-9 rounded-xl resize-none"
-                  />
+
+                  {onSubmit && (
+                    <Button
+                      onClick={handleSubmit}
+                      disabled={!canSubmit}
+                      size="lg"
+                      className="h-11 w-full rounded-xl font-medium"
+                    >
+                      {isLoading ? "Sending…" : submitLabel}
+                    </Button>
+                  )}
                 </div>
-                {onSubmit && (
-                  <Button
-                    onClick={handleSubmit}
-                    disabled={isLoading}
-                    size={"lg"}
-                    className={`w-full h-11 rounded-xl cursor-pointer font-medium shadow-lg hover:brightness-110 transition-all`}
-                  >
-                    {isLoading ? "Sending..." : submitLabel}
-                  </Button>
-                )}
               </motion.div>
             )}
           </AnimatePresence>
@@ -212,38 +224,6 @@ function FeedbackModule({
     </div>
   );
 }
-
-// Controlled
-interface FeedbackModuleControlled {
-  value: Feedback;
-  defaultValue?: never;
-  onChange: (feedback: Feedback) => void;
-}
-
-// Uncontrolled
-interface FeedbackModuleUncontrolled {
-  value?: never;
-  defaultValue?: Feedback;
-  onChange?: (feedback: Feedback) => void;
-}
-export type Feedback = { rating: number; comment?: string };
-
-export type FeedbackModuleProps = {
-  title?: string;
-  subtitle?: string;
-  placeholder?: string;
-  submitLabel?: string;
-  showComment?: boolean;
-  isLoading?: boolean;
-  levels?: {
-    label: string;
-    color: string;
-    icon?: Icon;
-    emptyIcon?: Icon;
-  }[];
-  onSubmit?: (data: Feedback) => void;
-  className?: string;
-} & (FeedbackModuleControlled | FeedbackModuleUncontrolled);
 
 FeedbackModule.displayName = "FeedbackModule";
 

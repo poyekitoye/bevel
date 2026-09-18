@@ -1,14 +1,17 @@
+"use client";
+
 import * as React from "react";
-import { Button } from "@/components/ui/button";
+import { Slot } from "@radix-ui/react-slot";
 import { IconSearch } from "@tabler/icons-react";
 import { cn } from "@/lib/utils";
-import { useCommandPalette } from "./command-palette-context";
+import { Button } from "@/components/ui/button";
 import { Kbd, KbdGroup } from "@/components/ui/kbd";
-import { Slot } from "@radix-ui/react-slot";
+import { useCommandPalette } from "./command-palette-context";
 
-interface CommandPaletteTriggerProps {
+export interface CommandPaletteTriggerProps {
   className?: string;
   label?: string;
+  /** Render icon-only. */
   hideAddon?: boolean;
   asChild?: boolean;
   children?: React.ReactNode;
@@ -16,34 +19,42 @@ interface CommandPaletteTriggerProps {
 
 export function CommandPaletteTrigger({
   className,
-  label = "Search...",
+  label = "Search…",
   hideAddon = false,
   asChild = false,
   children,
 }: CommandPaletteTriggerProps) {
   const { open } = useCommandPalette();
 
+  // ⌘ on Apple platforms, Ctrl elsewhere. The original always printed ⌘,
+  // which is simply the wrong key on Windows and Linux.
+  const [modKey, setModKey] = React.useState("⌘");
+  React.useEffect(() => {
+    const isApple = /mac|iphone|ipad|ipod/i.test(navigator.platform ?? "");
+    setModKey(isApple ? "⌘" : "Ctrl");
+  }, []);
+
   const triggerProps = {
     onClick: open,
+    "aria-label": label,
+    "aria-keyshortcuts": "Meta+K Control+K",
     className: cn(
-      "flex items-center gap-2 h-8 px-3 rounded-lg text-xs cursor-pointer",
-      hideAddon && "w-9!",
+      "flex h-8 items-center gap-2 rounded-lg px-3 text-bui-sm",
+      hideAddon && "w-9 px-0 justify-center",
       className,
     ),
   };
 
-  if (asChild) {
-    return <Slot {...triggerProps}>{children}</Slot>;
-  }
+  if (asChild) return <Slot {...triggerProps}>{children}</Slot>;
 
   return (
     <Button variant="outline" {...triggerProps}>
-      <IconSearch size={14} strokeWidth={1.8} />
+      <IconSearch size={14} strokeWidth={1.8} aria-hidden />
       {!hideAddon && (
         <>
-          <span className="flex-1 text-left">{label}</span>
+          <span className="flex-1 text-left text-muted-foreground">{label}</span>
           <KbdGroup>
-            <Kbd>⌘</Kbd>
+            <Kbd>{modKey}</Kbd>
             <Kbd>K</Kbd>
           </KbdGroup>
         </>
@@ -51,3 +62,5 @@ export function CommandPaletteTrigger({
     </Button>
   );
 }
+
+CommandPaletteTrigger.displayName = "CommandPaletteTrigger";

@@ -1,34 +1,46 @@
+"use client";
+
 import * as React from "react";
 import { IconGripVertical } from "@tabler/icons-react";
 import { cn } from "@/lib/utils";
-import { SortableHandleCtx } from "./sortable-context";
+import { useSortableHandle } from "./sortable-context";
 
 export interface SortableHandleProps {
   className?: string;
   children?: React.ReactNode;
+  "aria-label"?: string;
 }
 
 /**
- * Place inside <SortableItem handle> to restrict dragging to this element.
- * Renders a grip icon by default; pass children to customise.
+ * Place inside <SortableItem handle> to restrict dragging to this control.
+ * Renders a grip by default; pass children to replace it.
+ *
+ * The drag attributes now arrive here alongside the listeners, so this is the
+ * single focusable, announceable activator — previously the wrapper carried
+ * the ARIA while the handle carried the behaviour.
  */
-export function SortableHandle({ className, children }: SortableHandleProps) {
-  const listeners = React.useContext(SortableHandleCtx);
+export function SortableHandle({
+  className,
+  children,
+  "aria-label": ariaLabel = "Drag to reorder",
+}: SortableHandleProps) {
+  const handle = useSortableHandle();
 
   return (
     <button
+      ref={handle?.setActivatorNodeRef}
       type="button"
-      aria-label="Drag to reorder"
+      aria-label={ariaLabel}
       className={cn(
-        "cursor-grab active:cursor-grabbing p-1 rounded",
-        "text-muted-foreground/40 hover:text-muted-foreground",
-        "transition-colors touch-none focus-visible:outline-none",
-        "focus-visible:ring-1 focus-visible:ring-primary",
+        "cursor-grab touch-none rounded p-1 text-muted-foreground/40 transition-colors active:cursor-grabbing",
+        "hover:text-muted-foreground",
+        "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary",
         className,
       )}
-      {...(listeners ?? {})}
+      {...(handle?.attributes ?? {})}
+      {...(handle?.listeners ?? {})}
     >
-      {children ?? <IconGripVertical size={14} strokeWidth={1.8} />}
+      {children ?? <IconGripVertical size={14} strokeWidth={1.8} aria-hidden />}
     </button>
   );
 }

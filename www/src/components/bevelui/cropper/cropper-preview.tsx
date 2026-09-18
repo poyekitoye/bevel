@@ -45,7 +45,7 @@ export function CropperPreview({ maxSize = 140, className }: CropperPreviewProps
 
   return (
     <div className={cn("flex flex-col gap-2 shrink-0", className)}>
-      <span className="text-[10px] font-mono uppercase tracking-wider text-muted-foreground/50">
+      <span className="text-bui-2xs font-mono uppercase tracking-wider text-muted-foreground/50">
         Preview
       </span>
       <div
@@ -54,7 +54,7 @@ export function CropperPreview({ maxSize = 140, className }: CropperPreviewProps
       >
         <canvas ref={canvasRef} style={{ width: "100%", height: "100%", display: "block" }} />
       </div>
-      <span className="text-[10px] font-mono text-muted-foreground/40">
+      <span className="text-bui-2xs font-mono text-muted-foreground/40">
         {Math.round(region.width)} × {Math.round(region.height)}px
       </span>
     </div>

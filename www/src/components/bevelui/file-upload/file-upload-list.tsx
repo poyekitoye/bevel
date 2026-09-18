@@ -1,17 +1,21 @@
-import { useState } from "react";
-import { useFileUpload } from "./file-upload-context";
-import { FileUploadItem } from "./file-upload-item";
-import { cn } from "@/lib/utils";
-import { Button } from "@/components/ui/button";
+"use client";
+
+import * as React from "react";
+import { AnimatePresence } from "motion/react";
 import {
   IconClearAll,
   IconLayoutGrid,
   IconList,
   IconUpload,
 } from "@tabler/icons-react";
-import { AnimatePresence } from "motion/react";
+import { cn } from "@/lib/utils";
+import { Button } from "@/components/ui/button";
+import { useFileUpload } from "./file-upload-context";
+import { FileUploadItem } from "./file-upload-item";
 
-export function FileUploadList() {
+type View = "grid" | "list";
+
+export function FileUploadList({ className }: { className?: string }) {
   const {
     config,
     files,
@@ -22,66 +26,77 @@ export function FileUploadList() {
     retryFile,
     isUploading,
   } = useFileUpload();
-  const { auto } = config;
-  const [isList, setIsList] = useState(false);
+
+  const [view, setView] = React.useState<View>("grid");
 
   if (files.length === 0) return null;
 
   const pendingCount = files.filter((f) => f.status === "idle").length;
   const doneCount = files.filter((f) => f.status === "done").length;
+  const errorCount = files.filter((f) => f.status === "error").length;
+  const isList = view === "list";
 
   return (
-    <section className="@container/upload-list not-visited:flex flex-col gap-3">
-      <div className="flex items-center justify-between">
-        <span className="text-xs text-muted-foreground">
+    <section
+      // The original had `not-visited:flex flex-col`, so the section was never
+      // actually a flex container and the gap never applied.
+      className={cn("@container/upload-list flex flex-col gap-3", className)}
+      aria-label="Selected files"
+    >
+      <div className="flex flex-wrap items-center justify-between gap-2">
+        <p className="text-bui-sm text-muted-foreground" aria-live="polite">
           {files.length} file{files.length !== 1 ? "s" : ""}
           {doneCount > 0 && ` · ${doneCount} uploaded`}
-        </span>
+          {errorCount > 0 && ` · ${errorCount} failed`}
+        </p>
 
         <div className="flex items-center gap-1.5">
-          {files.length > 0 && (
-            <Button onClick={removeAll} variant={"destructive"} size={"sm"}>
-              <IconClearAll />
-              Clear all
-            </Button>
-          )}
-          <div className="flex items-center rounded-sm border border-border/60 overflow-hidden">
-            <button
-              onClick={() => setIsList(false)}
-              className={cn(
-                "flex items-center justify-center w-7 h-7 transition-colors",
-                !isList
-                  ? "bg-muted text-foreground"
-                  : "text-muted-foreground hover:text-foreground hover:bg-muted/50",
-              )}
-              title="Grid view"
-            >
-              <IconLayoutGrid size={14} strokeWidth={1.8} />
-            </button>
-            <button
-              onClick={() => setIsList(true)}
-              className={cn(
-                "flex items-center justify-center w-7 h-7 transition-colors",
-                isList
-                  ? "bg-muted text-foreground"
-                  : "text-muted-foreground hover:text-foreground hover:bg-muted/50",
-              )}
-              title="List view"
-            >
-              <IconList size={14} strokeWidth={1.8} />
-            </button>
+          <Button onClick={removeAll} variant="ghost" size="sm">
+            <IconClearAll size={14} aria-hidden />
+            Clear all
+          </Button>
+
+          <div
+            role="group"
+            aria-label="Layout"
+            className="flex items-center overflow-hidden rounded-sm border border-border/60"
+          >
+            {(
+              [
+                { id: "grid", icon: IconLayoutGrid, label: "Grid view" },
+                { id: "list", icon: IconList, label: "List view" },
+              ] as const
+            ).map(({ id, icon: Icon, label }) => (
+              <button
+                key={id}
+                type="button"
+                onClick={() => setView(id)}
+                aria-pressed={view === id}
+                aria-label={label}
+                className={cn(
+                  "flex size-7 items-center justify-center transition-colors",
+                  "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-primary",
+                  view === id
+                    ? "bg-muted text-foreground"
+                    : "text-muted-foreground hover:bg-muted/50 hover:text-foreground",
+                )}
+              >
+                <Icon size={14} strokeWidth={1.8} aria-hidden />
+              </button>
+            ))}
           </div>
         </div>
       </div>
 
-      <div
+      <ul
         className={cn(
+          "list-none",
           isList
             ? "flex flex-col gap-2"
             : "grid grid-cols-2 gap-2 @md/upload-list:grid-cols-3 @lg/upload-list:grid-cols-4 @2xl/upload-list:grid-cols-5 @4xl/upload-list:grid-cols-6",
         )}
       >
-        <AnimatePresence>
+        <AnimatePresence initial={false}>
           {files.map((file) => (
             <FileUploadItem
               key={file.id}
@@ -93,14 +108,14 @@ export function FileUploadList() {
             />
           ))}
         </AnimatePresence>
-      </div>
+      </ul>
 
-      {pendingCount > 0 && !auto && (
+      {pendingCount > 0 && !config.auto && (
         <div className="flex justify-end">
-          <Button onClick={uploadAll} disabled={isUploading}>
-            <IconUpload size={14} strokeWidth={2} />
+          <Button onClick={() => void uploadAll()} disabled={isUploading}>
+            <IconUpload size={14} strokeWidth={2} aria-hidden />
             {isUploading
-              ? "Uploading..."
+              ? "Uploading…"
               : `Upload ${pendingCount} file${pendingCount !== 1 ? "s" : ""}`}
           </Button>
         </div>
@@ -108,3 +123,5 @@ export function FileUploadList() {
     </section>
   );
 }
+
+FileUploadList.displayName = "FileUploadList";

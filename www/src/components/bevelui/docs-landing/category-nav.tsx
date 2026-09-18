@@ -63,7 +63,7 @@ export function CategoryNav({
               type="button"
               onClick={() => handleClick(cat.id)}
               className={cn(
-                "shrink-0 whitespace-nowrap rounded-full border px-3 py-1 font-mono text-[11px] font-medium uppercase tracking-wide transition-colors",
+                "shrink-0 whitespace-nowrap rounded-full border px-3 py-1 font-mono text-bui-xs font-medium uppercase tracking-wide transition-colors",
                 isActive
                   ? "border-primary/30 bg-primary/10 text-primary"
                   : "border-border/70 text-muted-foreground hover:border-border hover:text-foreground",

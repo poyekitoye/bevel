@@ -1,5 +1,5 @@
 import type React from "react";
-import { Accept, FileRejection } from "react-dropzone";
+import type { Accept, FileRejection } from "react-dropzone";
 
 type FileEntryMeta = {
   ext?: string;
@@ -7,41 +7,48 @@ type FileEntryMeta = {
   [key: string]: unknown;
 };
 
+export type FileStatus = "idle" | "uploading" | "done" | "error";
+
 export type FileEntry = {
   id: string;
-  /** The Native browser file object */
+  /** The native browser File object. */
   file: File;
-  /** The current status of the file entry */
-  status: "idle" | "uploading" | "done" | "error";
-  /** 1 - 100 */
+  status: FileStatus;
+  /** 0–100 */
   progress: number;
-  /** The error message if status  === "error" */
+  /** Error message when status === "error". */
   error?: string;
-  /** The File URL if status === "done" */
+  /**
+   * True when the file never entered the queue — rejected by accept, maxSize
+   * or maxFiles. Rendered as an error row that cannot be retried.
+   */
+  rejected?: boolean;
+  /** Resolved URL when status === "done". */
   url?: string;
-  /** The File Meta data */
   meta?: FileEntryMeta;
 };
 
 export type FileUploadConfig = {
-  /** Accepted MIME types e.g. ["image/*", "application/pdf"] */
+  /** Accepted MIME types, e.g. { "image/*": [] }. */
   accept?: Accept;
-  /** Max file size in bytes */
+  /** Max file size in bytes. */
   maxSize?: number;
-  /** Max number of files */
+  /** Max number of files. */
   maxFiles?: number;
-  /** Allow selecting multiple files at once */
+  /** Allow selecting multiple files at once. */
   multiple?: boolean;
-  /** Dropzone title */
+  /** Dropzone heading. */
   title?: string;
-  /** Dropzone description shows on the dropzone */
+  /** Dropzone supporting copy. */
   description?: string;
-  /** Dropzone icon shows on the dropzone */
+  /** Dropzone icon. */
   icon?: React.ReactNode;
-  /** Upload file automaticaly */
+  /** Start uploading as soon as files are added. */
   auto?: boolean;
-  /** Upload file automaticaly */
+  /** Files present before any interaction. */
   initialFiles?: FileEntry[];
+  /** Max simultaneous uploads from uploadAll. Default 3. */
+  concurrency?: number;
 };
 
 export type FileUploadContextValue = {
@@ -55,10 +62,10 @@ export type FileUploadContextValue = {
   setIsDragging: (v: boolean) => void;
   addFiles: (files: File[]) => void;
   removeFile: (id: string) => void;
-  uploadFile: (id: string) => void;
-  uploadAll: () => void;
+  uploadFile: (id: string) => Promise<void>;
+  uploadAll: () => Promise<void>;
   removeAll: () => void;
   cancelFile: (id: string) => void;
-  retryFile: (id: string) => void;
-  onAddRejected?: (fileRejections: FileRejection[]) => void;
+  retryFile: (id: string) => Promise<void>;
+  onAddRejected: (fileRejections: FileRejection[]) => void;
 };

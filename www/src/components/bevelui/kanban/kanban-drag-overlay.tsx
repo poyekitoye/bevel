@@ -50,7 +50,7 @@ export function KanbanDragOverlay() {
               <span className="text-sm font-semibold">
                 {activeColumnData.title}
               </span>
-              <span className="text-[10px] font-mono text-muted-foreground/50 bg-muted/50 px-1.5 py-0.5 rounded-full">
+              <span className="text-bui-2xs font-mono text-muted-foreground/50 bg-muted/50 px-1.5 py-0.5 rounded-full">
                 {activeColumnData.cards.length}
               </span>
             </div>

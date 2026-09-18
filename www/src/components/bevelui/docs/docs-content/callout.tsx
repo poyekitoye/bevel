@@ -55,9 +55,9 @@ export function Callout({
       <Icon size={16} strokeWidth={2} className={cn("mt-0.5 shrink-0", config.iconClasses)} />
       <div className="min-w-0 flex-1">
         {title && (
-          <p className="mb-0.5 text-[13.5px] font-medium text-foreground">{title}</p>
+          <p className="mb-0.5 text-bui-base font-medium text-foreground">{title}</p>
         )}
-        <p className="text-[13px] leading-relaxed text-muted-foreground">{content}</p>
+        <p className="text-bui-base leading-relaxed text-muted-foreground">{content}</p>
       </div>
     </div>
   );

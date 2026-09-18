@@ -45,7 +45,7 @@ export function PropertiesSection({
             className="text-muted-foreground/50 shrink-0"
           />
         )}
-        <span className="text-[10px] font-medium uppercase tracking-widest text-muted-foreground/70 select-none">
+        <span className="text-bui-2xs font-medium uppercase tracking-widest text-muted-foreground/70 select-none">
           {title}
         </span>
       </button>

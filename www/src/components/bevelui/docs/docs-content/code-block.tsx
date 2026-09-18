@@ -53,11 +53,11 @@ export function CodeBlock({
     >
       {(filename || language) && (
         <div className="flex items-center justify-between gap-2 border-b border-white/10 px-3.5 py-1.5">
-          <span className="truncate font-mono text-[11.5px] text-white/50">
+          <span className="truncate font-mono text-bui-xs text-white/50">
             {filename ?? language}
           </span>
           {filename && language && (
-            <span className="shrink-0 font-mono text-[10px] uppercase tracking-wide text-white/30">
+            <span className="shrink-0 font-mono text-bui-2xs uppercase tracking-wide text-white/30">
               {language}
             </span>
           )}
@@ -83,7 +83,7 @@ export function CodeBlock({
           )}
         </button>
 
-        <pre className="overflow-x-auto px-3.5 py-3 text-[12.5px] leading-relaxed">
+        <pre className="overflow-x-auto px-3.5 py-3 text-bui-sm leading-relaxed">
           <code className="font-mono">
             {lines.map((line, i) => {
               const lineNumber = i + 1;

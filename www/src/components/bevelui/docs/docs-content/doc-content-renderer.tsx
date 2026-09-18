@@ -32,7 +32,7 @@ function SectionHeading({ id, title }: { id: string; title: string }) {
   return (
     <h2
       id={id}
-      className="group/heading scroll-mt-20 flex items-center gap-1.5 text-[18px] font-semibold tracking-tight text-foreground"
+      className="group/heading scroll-mt-20 flex items-center gap-1.5 text-lg font-semibold tracking-tight text-foreground"
     >
       {title}
       <a
@@ -44,7 +44,7 @@ function SectionHeading({ id, title }: { id: string; title: string }) {
         <IconLink size={14} strokeWidth={2} className="text-muted-foreground" />
       </a>
       {copied && (
-        <span className="font-mono text-[10px] font-normal uppercase tracking-wide text-primary">
+        <span className="font-mono text-bui-2xs font-normal uppercase tracking-wide text-primary">
           Copied
         </span>
       )}
@@ -56,7 +56,7 @@ function Block({ block, demoRegistry }: { block: DocBlock; demoRegistry?: DemoRe
   switch (block.type) {
     case "text":
       return (
-        <p className="text-[14px] leading-relaxed text-muted-foreground">{block.content}</p>
+        <p className="text-bui-md leading-relaxed text-muted-foreground">{block.content}</p>
       );
     case "code":
       return (

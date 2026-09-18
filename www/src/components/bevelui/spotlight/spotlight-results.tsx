@@ -1,3 +1,5 @@
+"use client";
+
 import * as React from "react";
 import { useSpotlight } from "./spotlight-context";
 import { SpotlightResultItem } from "./spotlight-result-item";
@@ -5,51 +7,79 @@ import { SpotlightSkeleton } from "./spotlight-skeleton";
 import type { SpotlightConfig } from "./types";
 
 export function SpotlightResults({ config }: { config: SpotlightConfig }) {
-  const { results, isLoading, activeCategory } = useSpotlight();
+  const { visibleResults, isLoading, activeCategory, highlightedIndex, query } =
+    useSpotlight();
 
-  if (isLoading) return <SpotlightSkeleton />;
+  if (isLoading && visibleResults.length === 0) return <SpotlightSkeleton />;
 
-  const filtered =
-    activeCategory === "all"
-      ? results
-      : results.filter((r) => r.category === activeCategory);
-
-  if (filtered.length === 0) {
+  if (visibleResults.length === 0) {
     return (
-      <div className="flex flex-col items-center gap-2 py-10">
-        <p className="text-[13px] text-muted-foreground/50">No results found</p>
+      <div className="flex flex-col items-center gap-1 px-4 py-12 text-center">
+        <p className="text-bui-base text-muted-foreground">
+          No results for “{query}”
+        </p>
+        <p className="text-bui-xs text-muted-foreground/60">
+          Try a different term{activeCategory !== "all" && " or switch category"}.
+        </p>
       </div>
     );
   }
 
-  const grouped: Record<string, typeof filtered> = {};
-  for (const r of filtered) {
-    if (!grouped[r.category]) grouped[r.category] = [];
-    grouped[r.category].push(r);
+  // Group only when showing everything and there is more than one group.
+  const grouped = new Map<string, typeof visibleResults>();
+  for (const r of visibleResults) {
+    const list = grouped.get(r.category);
+    if (list) list.push(r);
+    else grouped.set(r.category, [r]);
   }
+  const showGroups = activeCategory === "all" && grouped.size > 1;
 
-  const showGroups =
-    activeCategory === "all" && Object.keys(grouped).length > 1;
+  let cursor = 0;
 
   return (
-    <div className="flex flex-col py-2">
+    <div
+      id="bui-spotlight-results"
+      role="listbox"
+      aria-label="Search results"
+      className="flex flex-col py-2"
+    >
       {showGroups
-        ? Object.entries(grouped).map(([catId, items]) => {
+        ? Array.from(grouped.entries()).map(([catId, items]) => {
+            const start = cursor;
+            cursor += items.length;
             const cat = config.categories.find((c) => c.id === catId);
+
             return (
-              <div key={catId}>
-                <div className="px-4 py-1.5">
-                  <span className="text-[10px]  uppercase text-muted-foreground">
+              <div key={catId} role="group" aria-labelledby={`bui-spot-g-${catId}`}>
+                <div className="px-4 pb-1 pt-2">
+                  <span
+                    id={`bui-spot-g-${catId}`}
+                    className="text-bui-2xs font-medium uppercase tracking-wide text-muted-foreground"
+                  >
                     {cat?.label ?? catId}
                   </span>
                 </div>
-                {items.map((r) => (
-                  <SpotlightResultItem key={r.id} result={r} />
+                {items.map((r, i) => (
+                  <SpotlightResultItem
+                    key={r.id}
+                    result={r}
+                    index={start + i}
+                    isHighlighted={start + i === highlightedIndex}
+                  />
                 ))}
               </div>
             );
           })
-        : filtered.map((r) => <SpotlightResultItem key={r.id} result={r} />)}
+        : visibleResults.map((r, i) => (
+            <SpotlightResultItem
+              key={r.id}
+              result={r}
+              index={i}
+              isHighlighted={i === highlightedIndex}
+            />
+          ))}
     </div>
   );
 }
+
+SpotlightResults.displayName = "SpotlightResults";

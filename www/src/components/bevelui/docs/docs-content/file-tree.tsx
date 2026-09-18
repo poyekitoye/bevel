@@ -22,14 +22,14 @@ function TreeNode({ node, depth }: { node: FileTreeNode; depth: number }) {
         )}
         <span
           className={cn(
-            "truncate font-mono text-[12.5px]",
+            "truncate font-mono text-bui-sm",
             node.highlight ? "font-medium text-foreground" : "text-foreground/85",
           )}
         >
           {node.name}
         </span>
         {node.comment && (
-          <span className="ml-2 truncate font-mono text-[11px] text-muted-foreground/60">
+          <span className="ml-2 truncate font-mono text-bui-xs text-muted-foreground/60">
             // {node.comment}
           </span>
         )}

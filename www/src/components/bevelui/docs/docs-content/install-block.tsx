@@ -32,7 +32,7 @@ export function InstallBlock({
         onClick={handleCopy}
         className={cn(
           "group flex items-center gap-2 overflow-x-auto rounded-md border border-border/70",
-          "bg-muted/40 px-3.5 py-2.5 text-left font-mono text-[13px] text-foreground/90",
+          "bg-muted/40 px-3.5 py-2.5 text-left font-mono text-bui-base text-foreground/90",
           "hover:border-border hover:bg-muted/60",
         )}
       >
@@ -51,9 +51,9 @@ export function InstallBlock({
         <div className="flex flex-col gap-3 border-l border-border/70 pl-3.5">
           {optionalSteps.map((step, i) => (
             <div key={i}>
-              <p className="text-[13px] font-medium text-foreground">{step.title}</p>
+              <p className="text-bui-base font-medium text-foreground">{step.title}</p>
               {step.note && (
-                <p className="mt-0.5 text-[12.5px] leading-relaxed text-muted-foreground">
+                <p className="mt-0.5 text-bui-sm leading-relaxed text-muted-foreground">
                   {step.note}
                 </p>
               )}

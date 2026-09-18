@@ -22,7 +22,7 @@ export function Faq({ items, className }: DocBlockFaq & { className?: string }) 
               aria-expanded={isOpen}
               className="flex w-full items-center justify-between gap-3 px-3.5 py-3 text-left"
             >
-              <span className="text-[13.5px] font-medium text-foreground">{item.q}</span>
+              <span className="text-bui-base font-medium text-foreground">{item.q}</span>
               <IconPlus
                 size={14}
                 strokeWidth={2}
@@ -41,7 +41,7 @@ export function Faq({ items, className }: DocBlockFaq & { className?: string }) 
                   transition={{ duration: 0.15, ease: "easeInOut" }}
                   className="overflow-hidden"
                 >
-                  <p className="px-3.5 pb-3.5 text-[13px] leading-relaxed text-muted-foreground">
+                  <p className="px-3.5 pb-3.5 text-bui-base leading-relaxed text-muted-foreground">
                     {item.a}
                   </p>
                 </motion.div>

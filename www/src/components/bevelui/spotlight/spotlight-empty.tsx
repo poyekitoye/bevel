@@ -1,16 +1,19 @@
+"use client";
+
 import * as React from "react";
+import { IconClock, IconSearch, IconX } from "@tabler/icons-react";
 import { useSpotlight } from "./spotlight-context";
-import { IconClock, IconX } from "@tabler/icons-react";
 
 export function SpotlightEmpty() {
-  const { recentSearches, setQuery, removeRecent, clearHistory } =
+  const { config, recentSearches, setQuery, removeRecent, clearHistory } =
     useSpotlight();
 
   if (recentSearches.length === 0) {
     return (
-      <div className="flex flex-col items-center gap-2 py-10 h-full">
-        <p className="text-[13px] text-muted-foreground/40">
-          Start typing to search
+      <div className="flex flex-col items-center gap-2 px-4 py-12 text-center">
+        <IconSearch size={20} className="text-muted-foreground/30" aria-hidden />
+        <p className="text-bui-base text-muted-foreground/50">
+          {config.emptyHint ?? "Start typing to search"}
         </p>
       </div>
     );
@@ -19,39 +22,44 @@ export function SpotlightEmpty() {
   return (
     <div className="flex flex-col py-2">
       <div className="flex items-center justify-between px-4 py-1.5">
-        <span className="text-[10px] font-mono uppercase tracking-widest text-muted-foreground/40">
+        <span className="font-mono text-bui-2xs uppercase tracking-widest text-muted-foreground/40">
           Recent
         </span>
         <button
           type="button"
           onClick={clearHistory}
-          className="text-[10px] text-destructive/60 hover:text-muted-foreground transition-colors"
+          className="rounded text-bui-2xs text-muted-foreground transition-colors hover:text-destructive focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary"
         >
           Clear all
         </button>
       </div>
-      {recentSearches.map((q, i) => (
-        <div
-          key={i}
-          className="flex items-center gap-3 px-4 py-2 hover:bg-muted/40 transition-colors group"
-        >
-          <IconClock size={14} className="text-muted-foreground/30 shrink-0" />
-          <button
-            type="button"
-            onClick={() => setQuery(q)}
-            className="flex-1 text-left text-[13px] text-muted-foreground/60 hover:text-foreground transition-colors truncate"
-          >
-            {q}
-          </button>
-          <button
-            type="button"
-            onClick={() => removeRecent(q)}
-            className="opacity-0 group-hover:opacity-100 text-muted-foreground/30 hover:text-muted-foreground transition-all"
-          >
-            <IconX size={12} />
-          </button>
-        </div>
-      ))}
+
+      <ul className="flex list-none flex-col">
+        {recentSearches.map((q) => (
+          // Keyed by the query, not the index — index keys made removals
+          // animate the wrong row out.
+          <li key={q} className="group flex items-center gap-3 px-4 py-2 transition-colors hover:bg-muted/40">
+            <IconClock size={14} className="shrink-0 text-muted-foreground/30" aria-hidden />
+            <button
+              type="button"
+              onClick={() => setQuery(q)}
+              className="flex-1 truncate text-left text-bui-base text-muted-foreground/70 transition-colors hover:text-foreground focus-visible:outline-none"
+            >
+              {q}
+            </button>
+            <button
+              type="button"
+              onClick={() => removeRecent(q)}
+              aria-label={`Remove “${q}” from recent searches`}
+              className="shrink-0 rounded p-0.5 text-muted-foreground/30 opacity-0 transition-all hover:text-foreground focus-visible:opacity-100 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary group-hover:opacity-100 [@media(hover:none)]:opacity-100"
+            >
+              <IconX size={12} aria-hidden />
+            </button>
+          </li>
+        ))}
+      </ul>
     </div>
   );
 }
+
+SpotlightEmpty.displayName = "SpotlightEmpty";

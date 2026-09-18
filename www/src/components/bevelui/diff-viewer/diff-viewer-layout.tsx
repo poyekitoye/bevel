@@ -18,7 +18,7 @@ export function DiffViewerLayout({ className }: DiffViewerLayoutProps) {
   return (
     <div className={cn("flex flex-col overflow-hidden rounded-xl border border-border bg-card/60", className)}>
       <div className="flex items-center justify-between border-b border-border/60 px-3 py-2">
-        <div className="flex items-center gap-3 text-[11px]">
+        <div className="flex items-center gap-3 text-bui-xs">
           <span className="text-emerald-500">+{stats.additions}</span>
           <span className="text-red-500">−{stats.deletions}</span>
           {stats.conflicts > 0 && <span className="text-amber-500">{stats.conflicts} conflicts</span>}
@@ -30,14 +30,14 @@ export function DiffViewerLayout({ className }: DiffViewerLayoutProps) {
               <button
                 type="button"
                 onClick={() => resolveAll("ours")}
-                className="text-[11px] text-muted-foreground hover:text-foreground"
+                className="text-bui-xs text-muted-foreground hover:text-foreground"
               >
                 Accept all ours
               </button>
               <button
                 type="button"
                 onClick={() => resolveAll("theirs")}
-                className="text-[11px] text-muted-foreground hover:text-foreground"
+                className="text-bui-xs text-muted-foreground hover:text-foreground"
               >
                 Accept all theirs
               </button>
@@ -51,7 +51,7 @@ export function DiffViewerLayout({ className }: DiffViewerLayoutProps) {
                 type="button"
                 onClick={() => setViewMode(m)}
                 className={cn(
-                  "rounded px-2 py-0.5 text-[11px] font-medium capitalize transition-colors",
+                  "rounded px-2 py-0.5 text-bui-xs font-medium capitalize transition-colors",
                   viewMode === m ? "bg-primary/10 text-primary" : "text-muted-foreground hover:text-foreground",
                 )}
               >

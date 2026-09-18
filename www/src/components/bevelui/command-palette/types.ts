@@ -4,20 +4,24 @@ export type CommandPaletteItem = {
   id: string;
   title: string;
   subtitle?: string;
-  /** Text shown on the far right of the row (e.g. role, category label) */
+  /** Text shown on the far right of the row (e.g. role, category label). */
   meta?: string;
-  /** URL to an avatar/icon image, or a React node for an icon */
+  /** Avatar/icon image URL, or a React node for an icon. */
   icon?: string | React.ReactNode;
-  /** Initials shown when icon is absent */
+  /** Initials shown when no icon is provided. */
   initials?: string;
-  /** Colour for the initials avatar background (any CSS colour) */
+  /** Background for the initials avatar. Any CSS colour. */
   initialsColor?: string;
-  /** Filter tab id this item belongs to — used for tab filtering */
+  /** Filter tab id this item belongs to. */
   category?: string;
-  /** Source tab id this item belongs to — used for source filtering */
+  /** Source tab id this item belongs to. */
   source?: string;
+  /** Rendered as a real link so middle-click and "open in new tab" work. */
   href?: string;
-  /** Source tab id this item belongs to — used for source filtering */
+  /** Open href in a new tab. */
+  external?: boolean;
+  /** Keyboard shortcut hint shown on the row, e.g. ["⌘", "P"]. */
+  shortcut?: string[];
   onSelect?: (item: CommandPaletteItem) => void;
   [x: string]: unknown;
 };
@@ -31,9 +35,8 @@ export type CommandPaletteSection = {
 export type CommandPaletteSourceTab = {
   id: string;
   label: string;
-  /** Image URL for integration logo */
+  /** Image URL for an integration logo. */
   logoSrc?: string;
-  /** React icon component */
   icon?: React.ReactNode;
 };
 
@@ -56,6 +59,7 @@ export type CommandPaletteContextValue = {
   open: () => void;
   close: () => void;
   setQuery: (q: string) => void;
+  setHighlightedIndex: (index: number) => void;
   setSourceTab: (id: string) => void;
   setFilterTab: (id: string) => void;
   moveUp: () => void;

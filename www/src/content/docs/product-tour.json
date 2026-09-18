@@ -1,20 +1,20 @@
 {
   "meta": {
     "title": "Product Tour",
-    "description": "A fully-engineered guided tour system. Highlights any element on the page, positions a floating card that never escapes the viewport, supports media, and handles keyboard navigation out of the box.",
+    "description": "A guided tour that survives the real world: a card that reflows to a bottom sheet on phones, a spotlight that tracks its anchor while the page scrolls, steps that can hand control back to the user, and a clear distinction between finishing and giving up.",
     "badge": "Components System",
     "category": "navigation-search",
     "useCases": ["Onboarding", "SaaS app", "Feature discovery"],
-    "tier": "free",
+    "tier": "updated",
     "builtWith": ["Motion", "@floating-ui/react", "Tailwind CSS"],
     "related": ["command-palette", "checklist"],
     "registryName": "tour",
     "features": [
-      "6 composable parts",
-      "@floating-ui/react positioning",
-      "SVG mask overlay",
-      "Keyboard navigable",
-      "Supports video, GIF, image"
+      "Bottom sheet on phones",
+      "rAF-coalesced spotlight tracking",
+      "Interactive steps",
+      "Focus trap + focus restore",
+      "Separate complete / skip callbacks"
     ],
     "keywords": [
       "tour",
@@ -23,6 +23,8 @@
       "walkthrough",
       "overlay",
       "media",
+      "responsive",
+      "mobile",
       "keyboard navigation",
       "floating-ui"
     ],
@@ -38,12 +40,17 @@
     { "id": "demo", "label": "Live demo", "depth": 1 },
     { "id": "installation", "label": "Installation", "depth": 1 },
     { "id": "usage", "label": "Basic usage", "depth": 1 },
+    { "id": "responsive", "label": "Small screens", "depth": 1 },
+    { "id": "interactive", "label": "Interactive steps", "depth": 1 },
+    { "id": "missing-anchors", "label": "Anchors that aren't there yet", "depth": 1 },
     { "id": "with-media", "label": "With media", "depth": 1 },
     { "id": "programmatic", "label": "Programmatic control", "depth": 1 },
+    { "id": "accessibility", "label": "Accessibility", "depth": 1 },
     { "id": "faq", "label": "FAQ", "depth": 1 },
     { "id": "api-tourstepdef", "label": "TourStepDef", "depth": 2 },
     { "id": "api-touranchor", "label": "TourAnchor", "depth": 2 },
-    { "id": "api-tourroot", "label": "TourRoot", "depth": 2 }
+    { "id": "api-tourroot", "label": "TourRoot", "depth": 2 },
+    { "id": "api-usetour", "label": "useTour", "depth": 2 }
   ],
   "sections": [
     {
@@ -51,11 +58,11 @@
       "blocks": [
         {
           "type": "text",
-          "content": "Guided tours sound simple until you implement one. The viewport clips. Your tooltip stays fixed while its anchor scrolls. On a narrower screen, the card renders off-canvas entirely. What looked fine in development ships broken."
+          "content": "Guided tours sound simple until you ship one. The card lands off-canvas on a phone. The spotlight lags a frame behind the element it is meant to be highlighting. The anchor for step 4 lives inside a menu that isn't open yet, so the card pins itself to the top-left corner. And the one callback you were given fires whether the user finished the tour or slammed the close button on step one."
         },
         {
           "type": "text",
-          "content": "TourRoot handles all of it. Every card is positioned by @floating-ui/react at render time — it computes the optimal placement, checks all four edges, and auto-flips to whichever side has room. The SVG mask punches a hole around the active anchor without shifting anything in the layout. Step navigation, keyboard control, and cleanup are all wired."
+          "content": "This system is built around those failures. Below 640px the floating card becomes a bottom sheet, capped at 60% of the small viewport height so the highlighted element stays visible above it. Anchor measurement is coalesced into one rAF per frame, so the cutout tracks the page instead of chasing it. A step can declare itself interactive and hand the click back to your UI. And completing a tour and abandoning one are different events."
         },
         {
           "type": "file-tree",
@@ -65,39 +72,23 @@
               "type": "folder",
               "isOpen": true,
               "children": [
-                {
-                  "name": "tour-root.tsx",
-                  "type": "file",
-                  "comment": "context + step state"
-                },
-                {
-                  "name": "tour-anchor.tsx",
-                  "type": "file",
-                  "comment": "registers element ref"
-                },
-                {
-                  "name": "tour-card.tsx",
-                  "type": "file",
-                  "comment": "floating card + media"
-                },
-                {
-                  "name": "tour-overlay.tsx",
-                  "type": "file",
-                  "comment": "SVG mask overlay"
-                },
-                {
-                  "name": "tour-trigger.tsx",
-                  "type": "file",
-                  "comment": "start/stop button"
-                },
-                {
-                  "name": "use-tour.ts",
-                  "type": "file",
-                  "comment": "programmatic control hook",
-                  "highlight": true
-                },
+                { "name": "tour-root.tsx", "type": "file", "comment": "composes provider + overlay + card" },
+                { "name": "tour-context.tsx", "type": "file", "comment": "step state, keyboard, lifecycle", "highlight": true },
+                { "name": "tour-anchor.tsx", "type": "file", "comment": "marks an element as a target" },
+                { "name": "tour-card.tsx", "type": "file", "comment": "popover / bottom sheet" },
+                { "name": "tour-overlay.tsx", "type": "file", "comment": "SVG mask + highlight ring" },
+                { "name": "tour-trigger.tsx", "type": "file", "comment": "start / stop button" },
                 { "name": "types.ts", "type": "file" },
                 { "name": "index.ts", "type": "file" }
+              ]
+            },
+            {
+              "name": "components/bevelui/lib/",
+              "type": "folder",
+              "isOpen": true,
+              "children": [
+                { "name": "use-element-rect.ts", "type": "file", "comment": "rAF-coalesced anchor tracking", "highlight": true },
+                { "name": "use-dismissable-layer.ts", "type": "file", "comment": "focus trap, Escape, focus restore" }
               ]
             }
           ]
@@ -105,8 +96,8 @@
         {
           "type": "callout",
           "variant": "tip",
-          "title": "How the mask works",
-          "content": "A full-screen SVG sits above all content. A <rect> with a cut-out matches the bounding box of the active anchor — computed fresh on each step. The rest of the page is dimmed. No z-index wars, no clipping, no layout side effects."
+          "title": "How the spotlight works",
+          "content": "A full-screen SVG sits above the page. A white rect covers everything; a black rect the size of the active anchor punches a hole in the mask. The dimmer is painted through that mask, so the anchor is lit without moving in the layout. The mask id is generated per instance — SVG ids are document-global, so a hardcoded one collides the moment two tours exist on a page."
         }
       ]
     },
@@ -116,7 +107,7 @@
       "blocks": [
         {
           "type": "text",
-          "content": "Click \"Start tour\" to walk through the dashboard below. Use ← → to navigate and Esc to close."
+          "content": "Start the tour and walk through the dashboard. Use ← → to navigate and Esc to close. Narrow your browser below 640px and the card becomes a bottom sheet."
         },
         {
           "type": "demo",
@@ -136,8 +127,8 @@
           "optionalSteps": [
             {
               "title": "Peer dependencies",
-              "code": "npm install @floating-ui/react motion",
-              "note": "Required for floating card placement and smooth overlay transitions."
+              "code": "npm install @floating-ui/react motion @radix-ui/react-slot",
+              "note": "Floating placement, overlay transitions, and the asChild prop respectively."
             }
           ]
         }
@@ -149,19 +140,85 @@
       "blocks": [
         {
           "type": "text",
-          "content": "Wrap your page with TourRoot, define your steps, then place TourAnchor around any element you want to highlight."
+          "content": "Wrap the subtree you want to tour with TourRoot, define your steps, then mark each target with TourAnchor."
         },
         {
           "type": "code",
           "language": "tsx",
           "filename": "app/dashboard/page.tsx",
-          "code": "import { TourRoot, TourAnchor, TourTrigger, type TourStepDef } from \"@/components/bevelui/tour\";\n\nconst steps: TourStepDef[] = [\n  {\n    step: 1,\n    title: \"Your profile\",\n    description: \"Click here to update your avatar and display name.\",\n    side: \"bottom\",\n  },\n  {\n    step: 2,\n    title: \"Settings\",\n    description: \"Manage notifications, billing, and team members here.\",\n    side: \"right\",\n  },\n];\n\nexport default function DashboardPage() {\n  return (\n    <TourRoot steps={steps} defaultOpen>\n      <TourAnchor step={1}>\n        <Avatar />\n      </TourAnchor>\n\n      <TourAnchor step={2} asChild>\n        <button>Settings</button>\n      </TourAnchor>\n\n      <TourTrigger label=\"Take a tour\" />\n    </TourRoot>\n  );\n}"
+          "code": "import {\n  TourRoot,\n  TourAnchor,\n  TourTrigger,\n  type TourStepDef,\n} from \"@/components/bevelui/tour\";\n\nconst steps: TourStepDef[] = [\n  {\n    step: 1,\n    title: \"Your profile\",\n    description: \"Update your avatar and display name here.\",\n    side: \"bottom\",\n  },\n  {\n    step: 2,\n    title: \"Settings\",\n    description: \"Notifications, billing, and team members live here.\",\n    side: \"right\",\n  },\n];\n\nexport default function DashboardPage() {\n  return (\n    <TourRoot\n      steps={steps}\n      onComplete={() => markOnboarded()}\n      onSkip={() => track(\"tour_abandoned\")}\n    >\n      <TourAnchor step={1}>\n        <Avatar />\n      </TourAnchor>\n\n      <TourAnchor step={2} asChild>\n        <button>Settings</button>\n      </TourAnchor>\n\n      <TourTrigger label=\"Take a tour\" />\n    </TourRoot>\n  );\n}"
         },
         {
           "type": "callout",
           "variant": "tip",
-          "title": "asChild prop",
-          "content": "Use asChild on TourAnchor when wrapping a button or link. This uses Radix Slot to merge props without adding an extra div to the DOM."
+          "title": "Finishing is not the same as quitting",
+          "content": "onComplete fires only when the user reaches the end and confirms. onSkip fires when they close early. onEnd fires for both and receives the reason — \"completed\", \"skipped\" or \"stopped\" — if you would rather handle them in one place."
+        },
+        {
+          "type": "callout",
+          "variant": "info",
+          "title": "asChild",
+          "content": "Use asChild when the anchor is already an element you control. It merges the anchor props onto your child via Radix Slot rather than wrapping it in an extra div that could disturb your layout."
+        }
+      ]
+    },
+    {
+      "id": "responsive",
+      "title": "Small screens",
+      "blocks": [
+        {
+          "type": "text",
+          "content": "Below 640px a 320px card pinned to a small anchor has nowhere to flip to, so it stops trying. The card detaches from the anchor and renders as a bottom sheet: full width, rounded top, safe-area aware, and capped at 60svh so whatever is being highlighted stays visible above it. The spotlight cutout keeps working exactly as it does on desktop."
+        },
+        {
+          "type": "text",
+          "content": "On desktop the card is additionally constrained by the floating-ui size middleware, so a long step on a short window scrolls inside the card instead of overflowing the viewport. Nothing about your step definitions changes — the same steps drive both layouts."
+        },
+        {
+          "type": "callout",
+          "variant": "info",
+          "title": "svh, not vh",
+          "content": "Mobile browsers shrink the viewport when the URL bar retracts. The sheet is sized in svh (small viewport height) so it does not jump as the bar appears and disappears mid-tour."
+        }
+      ]
+    },
+    {
+      "id": "interactive",
+      "title": "Interactive steps",
+      "blocks": [
+        {
+          "type": "text",
+          "content": "A spotlight that dismisses the tour when you click it is working against you — the whole point of highlighting a button is that the user should press it. Mark a step interactive and the dimmer stops intercepting pointer events, so the click reaches your UI. The tour advances when you tell it to."
+        },
+        {
+          "type": "code",
+          "language": "tsx",
+          "code": "const steps: TourStepDef[] = [\n  {\n    step: 3,\n    title: \"Create your first project\",\n    description: \"Go ahead — press the button. We'll continue once it's open.\",\n    side: \"bottom\",\n    interactive: true,\n  },\n];\n\nfunction NewProjectButton() {\n  const { currentStep, next } = useTour();\n\n  return (\n    <TourAnchor step={3} asChild>\n      <button\n        onClick={() => {\n          openProjectDialog();\n          if (currentStep === 3) next();\n        }}\n      >\n        New project\n      </button>\n    </TourAnchor>\n  );\n}"
+        }
+      ]
+    },
+    {
+      "id": "missing-anchors",
+      "title": "Anchors that aren't there yet",
+      "blocks": [
+        {
+          "type": "text",
+          "content": "Half the steps in a real tour point at things behind a closed menu, a collapsed sidebar, or a route that hasn't been visited. Give the step a beforeEnter hook and it runs — awaited, if it's async — before the card is placed."
+        },
+        {
+          "type": "code",
+          "language": "tsx",
+          "code": "{\n  step: 4,\n  title: \"Team settings\",\n  description: \"Invite teammates and set their roles.\",\n  beforeEnter: () => setSettingsMenuOpen(true),\n}"
+        },
+        {
+          "type": "text",
+          "content": "If the anchor still cannot be found, the card does not pin itself to the top-left corner. It falls back to a centred dialog and reports the situation through isAnchorMissing, so you can log it or skip the step. The anchor is also scrolled into view automatically when it sits outside the viewport — pass scrollToAnchor={false} to opt out."
+        },
+        {
+          "type": "callout",
+          "variant": "warning",
+          "title": "Step numbers do not have to be contiguous",
+          "content": "Steps are sorted by their step value and navigated by position, so numbering them 10, 20, 30 to leave room for later insertions works fine. Each value does need to be unique."
         }
       ]
     },
@@ -171,12 +228,18 @@
       "blocks": [
         {
           "type": "text",
-          "content": "Each step can include a media object. Videos autoplay muted and loop. GIFs and images are shown with a max height of 160px above the step title — just like Photoshop tooltips."
+          "content": "A step can carry an image, a GIF or a video, shown flush to the card's top edge above the title. Videos are muted, looped and playsInline so mobile browsers will actually start them, and the play/pause control is visible on touch rather than waiting for a hover that never comes."
         },
         {
           "type": "code",
           "language": "tsx",
-          "code": "const steps: TourStepDef[] = [\n  {\n    step: 1,\n    title: \"Export your data\",\n    description: \"Click the export button to download a CSV.\",\n    side: \"bottom\",\n    media: {\n      type: \"video\",           // \"video\" | \"gif\" | \"image\"\n      src: \"/demos/export.mp4\",\n      poster: \"/demos/export-thumb.jpg\",\n    },\n  },\n];"
+          "code": "const steps: TourStepDef[] = [\n  {\n    step: 1,\n    title: \"Export your data\",\n    description: \"Download everything as CSV in one click.\",\n    side: \"bottom\",\n    media: {\n      type: \"video\", // \"video\" | \"gif\" | \"image\"\n      src: \"/demos/export.mp4\",\n      poster: \"/demos/export-thumb.jpg\",\n      alt: \"Exporting a table to CSV\",\n    },\n  },\n];"
+        },
+        {
+          "type": "callout",
+          "variant": "tip",
+          "title": "Keep media short",
+          "content": "The card caps media at 160px tall. A 3–5 second loop reads as an illustration; anything longer competes with the text beside it for the user's attention."
         }
       ]
     },
@@ -186,12 +249,38 @@
       "blocks": [
         {
           "type": "text",
-          "content": "Use the useTour hook anywhere inside TourRoot to control the tour from your own UI."
+          "content": "useTour works anywhere inside TourRoot. Use it to drive the tour from your own UI, or to react to where the user currently is."
         },
         {
           "type": "code",
           "language": "tsx",
-          "code": "import { useTour } from \"@/components/bevelui/tour\";\n\nfunction MyToolbar() {\n  const {\n    start, stop, next, prev,\n    skip, goTo, currentStep,\n    totalSteps, isOpen\n  } = useTour();\n\n  return (\n    <div>\n      <button onClick={start}>Start tour</button>\n      <button onClick={() => goTo(3)}>Jump to step 3</button>\n      <button onClick={skip}>Skip</button>\n      <span>{currentStep} / {totalSteps}</span>\n    </div>\n  );\n}"
+          "code": "import { useTour } from \"@/components/bevelui/tour\";\n\nfunction TourToolbar() {\n  const {\n    start,\n    stop,\n    next,\n    prev,\n    skip,\n    goTo,\n    currentStep,\n    totalSteps,\n    isOpen,\n    isAnchorMissing,\n  } = useTour();\n\n  return (\n    <div>\n      <button onClick={start}>Start tour</button>\n      <button onClick={() => goTo(3)}>Jump to step 3</button>\n      <button onClick={skip}>Skip</button>\n      <span>\n        {currentStep} / {totalSteps}\n      </span>\n      {isAnchorMissing && <span>This step has no anchor on screen.</span>}\n    </div>\n  );\n}"
+        },
+        {
+          "type": "callout",
+          "variant": "info",
+          "title": "Resuming a tour",
+          "content": "There is deliberately no built-in persistence — where a user left off belongs in your database or storage, not in the component. Read your own flag and call start() plus goTo(savedStep) on mount."
+        }
+      ]
+    },
+    {
+      "id": "accessibility",
+      "title": "Accessibility",
+      "blocks": [
+        {
+          "type": "text",
+          "content": "The card is a labelled dialog. Opening it moves focus inside and Tab is trapped there; closing returns focus to whatever opened the tour. Escape dismisses. ← and → move between steps, and both are ignored while the user is typing in an input, textarea, select or contenteditable — so a tour running over a form does not steal the caret keys."
+        },
+        {
+          "type": "text",
+          "content": "The page behind stays scrollable on purpose: a tour explains a page, and locking it would make anchors below the fold unreachable. The progress dots are a labelled tablist, the media control is labelled, and every transition collapses to an instant state change under prefers-reduced-motion."
+        },
+        {
+          "type": "callout",
+          "variant": "tip",
+          "title": "aria-modal is false",
+          "content": "The tour card is a dialog but not a modal one — the content it describes has to stay reachable and readable underneath. Screen readers announce the step and its controls without hiding the rest of the page."
         }
       ]
     },
@@ -203,12 +292,28 @@
           "type": "faq",
           "items": [
             {
-              "q": "How does Product Tour handle responsive layouts and window resizing?",
-              "a": "Product Tour utilizes @floating-ui/react position listeners. When the user resizes the screen or scrolls, the card position and SVG mask auto-recalculate dynamically without breaking placement."
+              "q": "What happens on a phone?",
+              "a": "Below 640px the card stops trying to float next to a small anchor and renders as a bottom sheet instead: full width, rounded top corners, capped at 60% of the small viewport height, and padded for the home indicator via env(safe-area-inset-bottom). The spotlight cutout is unchanged, so the highlighted element is still visible above the sheet."
             },
             {
-              "q": "Can I trigger the tour automatically for new users?",
-              "a": "Yes! Pass defaultOpen={true} to TourRoot or trigger it programmatically using start() inside useTour() when user onboarding state is detected in your database or localStorage."
+              "q": "Does the spotlight keep up when the page scrolls?",
+              "a": "Yes. Anchor measurement runs through a rAF-coalesced tracker rather than calling setState from the scroll handler, and identical frames are skipped entirely — so a fast scroll produces one measurement per frame instead of one React render per scroll event."
+            },
+            {
+              "q": "Can the user interact with the thing being highlighted?",
+              "a": "Set interactive: true on that step. The dimmer stops capturing pointer events and clicking the highlighted element no longer dismisses the tour, so you can ask the user to actually perform the action and advance the tour yourself."
+            },
+            {
+              "q": "How do I tell finishing apart from quitting?",
+              "a": "onComplete fires only on reaching the end, onSkip only on early exit, and onEnd fires for both with a reason of \"completed\", \"skipped\" or \"stopped\". They are separate callbacks precisely because the analytics question \"did onboarding work\" depends on the difference."
+            },
+            {
+              "q": "The anchor for one of my steps is inside a closed menu. What now?",
+              "a": "Give the step a beforeEnter hook that opens the menu; it is awaited before the card is positioned. If the element is still missing, the card falls back to a centred dialog rather than pinning to the corner, and isAnchorMissing goes true so you can handle it."
+            },
+            {
+              "q": "Can I start the tour automatically for new users?",
+              "a": "Pass defaultOpen, or call start() from useTour once you have read your own onboarding flag. Keep the flag in your database or storage rather than expecting the component to remember it."
             }
           ]
         }
@@ -221,41 +326,16 @@
         {
           "type": "props-table",
           "rows": [
-            {
-              "prop": "step",
-              "type": "number",
-              "required": true,
-              "description": "1-based step index. Must be unique."
-            },
-            {
-              "prop": "title",
-              "type": "string",
-              "required": true,
-              "description": "Bold heading shown in the card."
-            },
-            {
-              "prop": "description",
-              "type": "string",
-              "required": true,
-              "description": "Body text explaining this step."
-            },
-            {
-              "prop": "side",
-              "type": "\"top\" | \"right\" | \"bottom\" | \"left\"",
-              "default": "\"bottom\"",
-              "description": "Preferred placement. Auto-flips if it would escape the viewport."
-            },
-            {
-              "prop": "sideOffset",
-              "type": "number",
-              "default": "16",
-              "description": "Distance between the card and the anchor in px."
-            },
-            {
-              "prop": "media",
-              "type": "TourMedia",
-              "description": "Optional image, gif, or video shown above the title."
-            }
+            { "prop": "step", "type": "number", "required": true, "description": "Step index. Must be unique; values need not be contiguous." },
+            { "prop": "title", "type": "string", "required": true, "description": "Heading shown in the card." },
+            { "prop": "description", "type": "string", "required": true, "description": "Body text explaining this step." },
+            { "prop": "side", "type": "\"top\" | \"right\" | \"bottom\" | \"left\"", "default": "\"bottom\"", "description": "Preferred placement. Flips automatically near a viewport edge. Ignored on the mobile bottom sheet." },
+            { "prop": "sideOffset", "type": "number", "default": "14", "description": "Distance between the card and the anchor, in px." },
+            { "prop": "media", "type": "TourMedia", "description": "Image, GIF or video shown above the title." },
+            { "prop": "highlightPadding", "type": "number", "default": "8", "description": "Padding between the anchor and the edge of the spotlight cutout." },
+            { "prop": "interactive", "type": "boolean", "default": "false", "description": "Let the user click the highlighted element. The dimmer stops capturing pointer events and no longer dismisses on click." },
+            { "prop": "beforeEnter", "type": "() => void | Promise<void>", "description": "Runs — and is awaited — before the step is shown. Use it to open whatever contains the anchor." },
+            { "prop": "id", "type": "string", "description": "Optional stable identifier for your own analytics." }
           ]
         }
       ]
@@ -267,19 +347,16 @@
         {
           "type": "props-table",
           "rows": [
-            {
-              "prop": "step",
-              "type": "number",
-              "required": true,
-              "description": "Which step this element is the anchor for."
-            },
-            {
-              "prop": "asChild",
-              "type": "boolean",
-              "default": "false",
-              "description": "Merge props onto the child element without adding a wrapper div. Uses Radix Slot."
-            }
+            { "prop": "step", "type": "number", "required": true, "description": "Which step this element is the anchor for." },
+            { "prop": "asChild", "type": "boolean", "default": "false", "description": "Merge props onto the child instead of rendering a wrapper div. Uses Radix Slot." },
+            { "prop": "className", "type": "string", "description": "Applied to the wrapper, or merged onto the child when asChild is set." }
           ]
+        },
+        {
+          "type": "callout",
+          "variant": "info",
+          "title": "The anchor no longer draws its own ring",
+          "content": "Highlighting is owned entirely by TourOverlay, which draws both the cutout and the ring from a single tracked rect. Anchors only need to be findable and to sit above the dimmer while active."
         }
       ]
     },
@@ -290,30 +367,40 @@
         {
           "type": "props-table",
           "rows": [
-            {
-              "prop": "steps",
-              "type": "TourStepDef[]",
-              "required": true,
-              "description": "All step definitions for this tour."
-            },
-            {
-              "prop": "defaultOpen",
-              "type": "boolean",
-              "default": "false",
-              "description": "Start the tour automatically on mount."
-            },
-            {
-              "prop": "onComplete",
-              "type": "() => void",
-              "description": "Called when the user finishes the last step."
-            },
-            {
-              "prop": "onSkip",
-              "type": "() => void",
-              "description": "Called when the user closes the tour early."
-            }
+            { "prop": "steps", "type": "TourStepDef[]", "required": true, "description": "All step definitions. Sorted by step value internally." },
+            { "prop": "defaultOpen", "type": "boolean", "default": "false", "description": "Start the tour on mount." },
+            { "prop": "showOverlay", "type": "boolean", "default": "true", "description": "Dim and cut out the page behind the card." },
+            { "prop": "scrollToAnchor", "type": "boolean", "default": "true", "description": "Scroll an off-screen anchor into view when its step becomes active." },
+            { "prop": "onComplete", "type": "() => void", "description": "Fires only when the user reaches the end and confirms." },
+            { "prop": "onSkip", "type": "() => void", "description": "Fires only when the user abandons the tour." },
+            { "prop": "onEnd", "type": "(reason: TourEndReason) => void", "description": "Fires on any exit with \"completed\", \"skipped\" or \"stopped\"." },
+            { "prop": "cardClassName", "type": "string", "description": "Class applied to the tour card." }
           ]
         }
+      ]
+    },
+    {
+      "id": "api-usetour",
+      "title": "useTour",
+      "blocks": [
+        {
+          "type": "props-table",
+          "rows": [
+            { "prop": "isOpen", "type": "boolean", "description": "Whether the tour is currently running." },
+            { "prop": "currentStep", "type": "number", "description": "The active step's step value." },
+            { "prop": "totalSteps", "type": "number", "description": "How many steps the tour has." },
+            { "prop": "currentStepDef", "type": "TourStepDef | undefined", "description": "The full definition of the active step." },
+            { "prop": "isAnchorMissing", "type": "boolean", "description": "True when the current step's anchor is not in the DOM. The card falls back to a centred dialog." },
+            { "prop": "steps", "type": "TourStepDef[]", "description": "All steps, sorted by step value." },
+            { "prop": "start", "type": "() => void", "description": "Start from the first step." },
+            { "prop": "stop", "type": "() => void", "description": "End the tour with reason \"stopped\"." },
+            { "prop": "next", "type": "() => void", "description": "Advance, or complete the tour on the last step." },
+            { "prop": "prev", "type": "() => void", "description": "Go back one step. No-op on the first." },
+            { "prop": "goTo", "type": "(step: number) => void", "description": "Jump to a step by its step value." },
+            { "prop": "skip", "type": "() => void", "description": "End the tour with reason \"skipped\"." }
+          ]
+        },
+        { "type": "related", "currentRoute": "product-tour" }
       ]
     }
   ]

@@ -265,7 +265,7 @@ export function CropperCanvas({ className }: CropperCanvasProps) {
 
       {!imageSize && (
         <div className="absolute inset-0 flex items-center justify-center">
-          <span className="text-[11px] font-mono text-muted-foreground/40">
+          <span className="text-bui-xs font-mono text-muted-foreground/40">
             Loading…
           </span>
         </div>

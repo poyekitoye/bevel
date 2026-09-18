@@ -1,7 +1,7 @@
+"use client";
+
 import * as React from "react";
-import { createPortal } from "react-dom";
 import { Slot } from "@radix-ui/react-slot";
-import { motion, AnimatePresence } from "motion/react";
 import { cn } from "@/lib/utils";
 import { useTour } from "./tour-context";
 
@@ -10,145 +10,63 @@ function mergeRefs<T>(...refs: React.Ref<T>[]): React.RefCallback<T> {
     refs.forEach((ref) => {
       if (typeof ref === "function") ref(node);
       else if (ref && "current" in ref)
-        (ref as React.RefObject<T>).current = node;
+        (ref as React.MutableRefObject<T>).current = node;
     });
   };
 }
 
-const RING_PADDING = 6;
-
-function PortalRing({ anchorEl }: { anchorEl: Element | null }) {
-  const [rect, setRect] = React.useState<DOMRect | null>(null);
-
-  React.useLayoutEffect(() => {
-    if (!anchorEl) return;
-
-    function measure() {
-      if (anchorEl) setRect(anchorEl.getBoundingClientRect());
-    }
-
-    measure();
-    window.addEventListener("scroll", measure, true);
-    window.addEventListener("resize", measure);
-    const ro = new ResizeObserver(measure);
-    ro.observe(anchorEl);
-
-    return () => {
-      window.removeEventListener("scroll", measure, true);
-      window.removeEventListener("resize", measure);
-      ro.disconnect();
-    };
-  }, [anchorEl]);
-
-  if (!rect) return null;
-
-  return createPortal(
-    <motion.span
-      layoutId="tour-highlight-ring"
-      className="pointer-events-none fixed rounded-xl border-2 border-primary z-[201]"
-      style={{
-        top: rect.top - RING_PADDING,
-        left: rect.left - RING_PADDING,
-        width: rect.width + RING_PADDING * 2,
-        height: rect.height + RING_PADDING * 2,
-      }}
-      initial={{ opacity: 0, scale: 0.92 }}
-      animate={{
-        opacity: 1,
-        scale: 1,
-        top: rect.top - RING_PADDING,
-        left: rect.left - RING_PADDING,
-        width: rect.width + RING_PADDING * 2,
-        height: rect.height + RING_PADDING * 2,
-      }}
-      exit={{ opacity: 0, scale: 0.92 }}
-      transition={{ type: "spring", stiffness: 400, damping: 30 }}
-    />,
-    document.body,
-  );
-}
-
 export interface TourAnchorProps extends React.HTMLAttributes<HTMLElement> {
-  /** 1-based step index — must match a step in your TourStepDef array */
+  /** 1-based step index — must match a step in your TourStepDef array. */
   step: number;
-  /** Merge props onto child element (no wrapper div). Uses Radix Slot. */
+  /** Merge props onto the child element instead of rendering a wrapper. */
   asChild?: boolean;
-  /** Padding around the anchor element for the highlight ring */
-  ringPadding?: number;
-  /** Custom class names for the highlight ring */
-  ringClassName?: string;
 }
 
+/**
+ * Marks an element as the target for a tour step.
+ *
+ * This used to draw its own highlight ring — a second ring system running
+ * alongside TourOverlay's, both claiming the same `layoutId`, both measuring
+ * on every scroll event, and one of them reading `innerRef.current` during
+ * render (always null on first paint, so it never appeared until something
+ * else re-rendered). The overlay owns the cutout and the ring now; an anchor's
+ * only job is to be findable and to sit above the dimmer.
+ */
 export const TourAnchor = React.forwardRef<HTMLElement, TourAnchorProps>(
-  (
-    {
-      step,
-      asChild = false,
-      children,
-      className,
-      ringPadding,
-      ringClassName,
-      ...props
-    },
-    ref,
-  ) => {
+  ({ step, asChild = false, children, className, ...props }, ref) => {
     const { currentStep, isOpen } = useTour();
     const isActive = isOpen && currentStep === step;
-    const innerRef = React.useRef<HTMLElement | null>(null);
-    const [mounted, setMounted] = React.useState(false);
 
-    React.useEffect(() => setMounted(true), []);
+    const sharedProps = {
+      "data-tour-step": step,
+      "data-tour-active": isActive || undefined,
+      className: cn(
+        // Lift above the dimmer while active so the element reads as
+        // highlighted rather than greyed out.
+        isActive && "relative",
+        className,
+      ),
+      style: isActive
+        ? ({ zIndex: "var(--z-bui-panel)" } as React.CSSProperties)
+        : undefined,
+      ...props,
+    };
 
     if (asChild) {
       return (
-        <>
-          <Slot
-            ref={mergeRefs(innerRef, ref) as React.Ref<HTMLElement>}
-            data-tour-step={step}
-            className={cn(isActive && "relative z-[201]", className)}
-            {...props}
-          >
-            {children}
-          </Slot>
-
-          {mounted && (
-            <AnimatePresence>
-              {isActive && <PortalRing anchorEl={innerRef.current} />}
-            </AnimatePresence>
-          )}
-        </>
+        <Slot ref={ref as React.Ref<HTMLElement>} {...sharedProps}>
+          {children}
+        </Slot>
       );
     }
 
     return (
       <div
-        ref={mergeRefs(innerRef, ref as React.Ref<HTMLDivElement>)}
-        data-tour-step={step}
-        className={cn(
-          "relative inline-block",
-          isActive && "z-[201]",
-          className,
-        )}
-        {...props}
+        ref={mergeRefs(ref as React.Ref<HTMLDivElement>)}
+        {...sharedProps}
+        className={cn("relative inline-block", sharedProps.className)}
       >
         {children}
-
-        <AnimatePresence>
-          {isActive && (
-            <motion.span
-              layoutId="tour-highlight-ring"
-              className={cn(
-                "pointer-events-none absolute rounded-xl border-2 border-primary animate-pulse",
-                ringClassName,
-              )}
-              style={{ inset: `-${ringPadding ?? RING_PADDING}px` }}
-              initial={{ opacity: 0, scale: 0.92 }}
-              animate={{ opacity: 1, scale: 1 }}
-              exit={{ opacity: 0, scale: 0.92 }}
-              transition={{ type: "spring", stiffness: 400, damping: 30 }}
-            />
-          )}
-        </AnimatePresence>
       </div>
     );
   },

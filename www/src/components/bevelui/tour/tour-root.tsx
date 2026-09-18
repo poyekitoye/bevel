@@ -1,46 +1,40 @@
-import React from "react";
-import { TourProvider } from "./tour-context";
+"use client";
+
+import * as React from "react";
+import { TourProvider, type TourProviderProps } from "./tour-context";
 import { TourOverlay } from "./tour-overlay";
 import { TourCard } from "./tour-card";
-import type { TourStepDef } from "./types";
 
-interface TourRootProps {
+export interface TourRootProps extends Omit<TourProviderProps, "children"> {
   children: React.ReactNode;
-  steps: TourStepDef[];
-  defaultOpen?: boolean;
-  showOverlay?: boolean;
-  onComplete?: () => void;
-  onSkip?: () => void;
+  /** Class applied to the tour card. */
+  cardClassName?: string;
 }
 
 /**
- * TourRoot — drop this around any subtree you want to tour.
- * It composes Provider + Overlay + Card so you only need one import.
+ * Composes Provider + Overlay + Card so a tour is a single import.
  *
  * @example
- * <TourRoot steps={tourSteps} defaultOpen>
- *   <MyPage />
+ * <TourRoot
+ *   steps={steps}
+ *   onComplete={() => markOnboarded()}
+ *   onSkip={() => track("tour_skipped")}
+ * >
+ *   <App />
  * </TourRoot>
  */
 export function TourRoot({
   children,
-  steps,
-  defaultOpen = false,
-  showOverlay = true,
-  onComplete,
-  onSkip,
+  cardClassName,
+  ...providerProps
 }: TourRootProps) {
   return (
-    <TourProvider
-      steps={steps}
-      defaultOpen={defaultOpen}
-      onComplete={onComplete}
-      onSkip={onSkip}
-      showOverlay={showOverlay}
-    >
+    <TourProvider {...providerProps}>
       {children}
       <TourOverlay />
-      <TourCard />
+      <TourCard className={cardClassName} />
     </TourProvider>
   );
 }
+
+TourRoot.displayName = "TourRoot";

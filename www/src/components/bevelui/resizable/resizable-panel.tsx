@@ -1,8 +1,8 @@
 "use client";
 
 import * as React from "react";
-import { useResizable } from "./resizable-context";
 import { cn } from "@/lib/utils";
+import { useResizable } from "./resizable-context";
 
 export interface ResizablePanelProps {
   index: number;
@@ -15,23 +15,28 @@ export function ResizablePanel({
   children,
   className,
 }: ResizablePanelProps) {
-  const { direction, collapsed, panelConfigs } = useResizable();
+  const { direction, collapsed, sizes, panelConfigs, isDragging } =
+    useResizable();
+
   const config = panelConfigs[index];
   const isCollapsed = collapsed[index] ?? false;
 
-  const sizeVar = `var(--panel-${index}, ${100 / 3}%)`;
+  // Fall back to this panel's own size, not a hardcoded third. The original
+  // used `var(--panel-N, 33.33%)`, so a 50/50 split flashed at 33% on every
+  // mount until the layout effect wrote the real value.
+  const fallback = sizes[index] ?? 100 / Math.max(1, sizes.length);
+  const sizeVar = `var(--panel-${index}, ${fallback}%)`;
+  const axis = direction === "horizontal" ? "width" : "height";
 
   return (
     <div
-      className={cn("overflow-hidden min-w-0 min-h-0", className)}
+      className={cn("min-h-0 min-w-0 overflow-hidden", className)}
       style={{
-        [direction === "horizontal" ? "width" : "height"]: isCollapsed
-          ? `${config?.collapsedSize ?? 0}%`
-          : sizeVar,
+        [axis]: isCollapsed ? `${config?.collapsedSize ?? 0}%` : sizeVar,
         flex: "0 0 auto",
-        transition: isCollapsed
-          ? "width 200ms ease, height 200ms ease"
-          : undefined,
+        // Animate collapse *and* expand. The original only set a transition
+        // while collapsed, so expanding snapped.
+        transition: isDragging ? undefined : `${axis} 200ms ease`,
       }}
     >
       {children}

@@ -43,7 +43,7 @@ export function SystemCard({
           {badge && (
             <Badge
               className={cn(
-                "rounded-[4px] border px-1.5 py-0 font-mono text-[9px] font-medium uppercase leading-[18px] tracking-wide",
+                "rounded-[4px] border px-1.5 py-0 font-mono text-bui-2xs font-medium uppercase leading-[18px] tracking-wide",
                 BADGE_CLASSES[badge.variant],
               )}
             >
@@ -59,8 +59,8 @@ export function SystemCard({
       </div>
 
       <div className="flex flex-col gap-1">
-        <h3 className="text-[14.5px] font-semibold text-foreground">{system.title}</h3>
-        <p className="line-clamp-2 text-[12.5px] leading-relaxed text-muted-foreground">
+        <h3 className="text-bui-md font-semibold text-foreground">{system.title}</h3>
+        <p className="line-clamp-2 text-bui-sm leading-relaxed text-muted-foreground">
           {system.description}
         </p>
       </div>
@@ -70,7 +70,7 @@ export function SystemCard({
           {system.useCases.slice(0, 3).map((useCase) => (
             <span
               key={useCase}
-              className="rounded-[4px] border border-border/60 px-1.5 py-0.5 font-mono text-[10px] text-muted-foreground/80"
+              className="rounded-[4px] border border-border/60 px-1.5 py-0.5 font-mono text-bui-2xs text-muted-foreground/80"
             >
               {useCase}
             </span>

@@ -4,10 +4,19 @@
     "description": "Recursive hierarchical data with expand/collapse, multi-select, full keyboard navigation, and optional connecting lines. File explorers, org charts, category trees.",
     "badge": "Components System",
     "category": "layout-panels",
-    "useCases": ["File explorer", "Org chart", "Sidebar nav"],
+    "useCases": [
+      "File explorer",
+      "Org chart",
+      "Sidebar nav"
+    ],
     "tier": "free",
-    "builtWith": ["Tailwind CSS"],
-    "related": ["sortable", "properties-panel"],
+    "builtWith": [
+      "Tailwind CSS"
+    ],
+    "related": [
+      "sortable",
+      "properties-panel"
+    ],
     "registryName": "tree",
     "features": [
       "Full keyboard navigation",
@@ -26,25 +35,76 @@
       "connecting lines"
     ],
     "slug": "tree",
-    "prev": { "label": "Tree view", "href": "/docs/components/tree" },
+    "prev": {
+      "label": "Tree view",
+      "href": "/docs/components/tree"
+    },
     "next": {
       "label": "Media Gallery",
       "href": "/docs/components/gallery"
     }
   },
   "tocs": [
-    { "id": "overview", "label": "Overview", "depth": 1 },
-    { "id": "demo", "label": "Live demo", "depth": 1 },
-    { "id": "installation", "label": "Installation", "depth": 1 },
-    { "id": "usage", "label": "Basic usage", "depth": 1 },
-    { "id": "keyboard", "label": "Keyboard navigation", "depth": 1 },
-    { "id": "multiselect", "label": "Multi-select", "depth": 1 },
-    { "id": "lines", "label": "Connecting lines", "depth": 1 },
-    { "id": "programmatic", "label": "useTree", "depth": 1 },
-    { "id": "faq", "label": "FAQ", "depth": 1 },
-    { "id": "api-root", "label": "TreeRoot", "depth": 2 },
-    { "id": "api-node", "label": "TreeNode", "depth": 2 },
-    { "id": "api-config", "label": "TreeConfig", "depth": 2 }
+    {
+      "id": "overview",
+      "label": "Overview",
+      "depth": 1
+    },
+    {
+      "id": "demo",
+      "label": "Live demo",
+      "depth": 1
+    },
+    {
+      "id": "installation",
+      "label": "Installation",
+      "depth": 1
+    },
+    {
+      "id": "usage",
+      "label": "Basic usage",
+      "depth": 1
+    },
+    {
+      "id": "keyboard",
+      "label": "Keyboard navigation",
+      "depth": 1
+    },
+    {
+      "id": "multiselect",
+      "label": "Multi-select",
+      "depth": 1
+    },
+    {
+      "id": "lines",
+      "label": "Connecting lines",
+      "depth": 1
+    },
+    {
+      "id": "programmatic",
+      "label": "useTree",
+      "depth": 1
+    },
+    {
+      "id": "faq",
+      "label": "FAQ",
+      "depth": 1
+    },
+    {
+      "id": "api-root",
+      "label": "TreeRoot",
+      "depth": 2
+    },
+    {
+      "id": "api-node",
+      "label": "TreeNode",
+      "depth": 2
+    },
+    {
+      "id": "api-config",
+      "label": "TreeConfig",
+      "depth": 2
+    }
   ],
   "sections": [
     {
@@ -93,11 +153,14 @@
                   "comment": "recursive renderer + animation"
                 },
                 {
-                  "name": "tree-hook.ts",
+                  "name": "tree-context.tsx",
                   "type": "file",
                   "comment": "re-export hook"
                 },
-                { "name": "index.ts", "type": "file" }
+                {
+                  "name": "index.ts",
+                  "type": "file"
+                }
               ]
             }
           ]

@@ -1,8 +1,10 @@
+"use client";
+
 import * as React from "react";
 import { useSortable } from "@dnd-kit/sortable";
 import { CSS } from "@dnd-kit/utilities";
 import { cn } from "@/lib/utils";
-import { SortableCtx, SortableHandleCtx } from "./sortable-context";
+import { SortableHandleCtx, useSortableRoot } from "./sortable-context";
 
 export interface SortableItemProps {
   id: string;
@@ -10,13 +12,11 @@ export interface SortableItemProps {
   className?: string;
   disabled?: boolean;
   /**
-   * When true, only <SortableHandle> inside this item triggers drag.
-   * Overrides the SortableRoot config.handle setting for this item.
+   * When true, only <SortableHandle> inside this item starts a drag.
+   * Overrides SortableRoot's config.handle for this item.
    */
   handle?: boolean;
 }
-
-type DraggableListeners = Record<string, (event: React.SyntheticEvent) => void>;
 
 export function SortableItem({
   id,
@@ -25,32 +25,48 @@ export function SortableItem({
   disabled,
   handle: handleProp,
 }: SortableItemProps) {
-  const { config, activeId } = React.useContext(SortableCtx)!;
+  // useSortableRoot throws a named error. The original did
+  // `React.useContext(SortableCtx)!`, so using an item outside a root failed
+  // with "cannot read property 'config' of null" instead of saying what was
+  // actually wrong.
+  const { config, activeId } = useSortableRoot();
   const useHandle = handleProp ?? config.handle ?? false;
 
   const {
     attributes,
     listeners,
     setNodeRef,
+    setActivatorNodeRef,
     transform,
     transition,
     isDragging,
   } = useSortable({ id, disabled });
 
-  const style: React.CSSProperties = {
-    transform: CSS.Transform.toString(transform),
-    transition,
-  };
+  // In handle mode the drag attributes (role, tabIndex, aria-roledescription)
+  // belong on the handle, not the wrapper. The original spread them onto the
+  // wrapper regardless, so keyboard focus landed on an element that announced
+  // itself as draggable but carried none of the listeners — keyboard sorting
+  // was unreachable whenever a handle was used.
+  const handleContext = React.useMemo(
+    () =>
+      useHandle
+        ? {
+            listeners,
+            attributes,
+            setActivatorNodeRef,
+          }
+        : null,
+    [useHandle, listeners, attributes, setActivatorNodeRef],
+  );
 
   return (
-    <SortableHandleCtx.Provider
-      value={
-        useHandle ? (listeners as unknown as DraggableListeners) : undefined
-      }
-    >
+    <SortableHandleCtx.Provider value={handleContext}>
       <div
         ref={setNodeRef}
-        style={style}
+        style={{
+          transform: CSS.Transform.toString(transform),
+          transition,
+        }}
         data-dragging={isDragging || undefined}
         data-active={activeId === id || undefined}
         className={cn(
@@ -58,8 +74,8 @@ export function SortableItem({
           isDragging && "opacity-40",
           className,
         )}
-        {...attributes}
-        {...(!useHandle ? listeners : {})}
+        {...(useHandle ? {} : attributes)}
+        {...(useHandle ? {} : listeners)}
       >
         {children}
       </div>

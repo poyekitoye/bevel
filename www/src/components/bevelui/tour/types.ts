@@ -1,26 +1,38 @@
 export type TourSide = "top" | "right" | "bottom" | "left";
 
+/** How the tour ended — consumers previously could not tell these apart. */
+export type TourEndReason = "completed" | "skipped" | "stopped";
+
 export interface TourMedia {
   type: "video" | "gif" | "image";
   src: string;
-  poster?: string; // video thumbnail
+  /** Video thumbnail shown before playback begins. */
+  poster?: string;
   alt?: string;
 }
 
 export interface TourStepDef {
-  /** 1-based step index */
   id?: string;
+  /** 1-based step index. */
   step: number;
   title: string;
   description: string;
-  /** Which side the card appears on — auto-flips if it hits screen edge */
+  /** Preferred side for the card. Flips automatically near a viewport edge. */
   side?: TourSide;
-  /** Optional offset from the anchor in px */
+  /** Distance from the anchor in px. */
   sideOffset?: number;
-  /** Optional media — shown above the title like Photoshop tooltips */
+  /** Media shown above the title. */
   media?: TourMedia;
-  /** Padding around the anchor highlight in px */
+  /** Padding around the anchor highlight in px. */
   highlightPadding?: number;
+  /**
+   * Let the user click the highlighted element during this step. The cutout
+   * becomes interactive and the overlay no longer dismisses on click, so a
+   * step can ask the user to actually perform the action.
+   */
+  interactive?: boolean;
+  /** Run before the step is shown — e.g. open a menu that holds the anchor. */
+  beforeEnter?: () => void | Promise<void>;
 }
 
 export interface TourContextValue {
@@ -28,8 +40,10 @@ export interface TourContextValue {
   currentStep: number;
   totalSteps: number;
   isOpen: boolean;
-  showOverlay?: boolean;
+  showOverlay: boolean;
   currentStepDef: TourStepDef | undefined;
+  /** True while the anchor for the current step cannot be found in the DOM. */
+  isAnchorMissing: boolean;
   start: () => void;
   stop: () => void;
   next: () => void;

@@ -1,6 +1,7 @@
 "use client";
 
-import { useState } from "react";
+import * as React from "react";
+import type { Icon } from "@tabler/icons-react";
 import { cn } from "@/lib/utils";
 import {
   Select,
@@ -12,9 +13,7 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { Skeleton } from "@/components/ui/skeleton";
-import type { Icon } from "@tabler/icons-react";
-
-// ─── Types ────────────────────────────────────────────────────────────────────
+import { useControllableState } from "../lib/use-controllable-state";
 
 export interface SelectFieldOption {
   value: string;
@@ -31,69 +30,85 @@ export interface SelectFieldOptionGroup {
   options: SelectFieldOption[];
 }
 
-type SelectFieldControlled = { value: string; defaultValue?: never; onChange: (value: string) => void };
-type SelectFieldUncontrolled = { value?: never; defaultValue?: string; onChange?: (value: string) => void };
-
 export type SelectFieldProps = {
   options: SelectFieldOption[] | SelectFieldOptionGroup[];
+  value?: string;
+  defaultValue?: string;
+  onChange?: (value: string) => void;
   placeholder?: string;
   isLoading?: boolean;
+  disabled?: boolean;
+  invalid?: boolean;
+  /** Associates the trigger with an external <label htmlFor>. */
+  id?: string;
+  /** Submits with a surrounding form. */
+  name?: string;
+  "aria-label"?: string;
   className?: string;
-} & (SelectFieldControlled | SelectFieldUncontrolled);
+};
 
-// ─── Helpers ──────────────────────────────────────────────────────────────────
-
-function isGrouped(options: SelectFieldOption[] | SelectFieldOptionGroup[]): options is SelectFieldOptionGroup[] {
+function isGrouped(
+  options: SelectFieldOption[] | SelectFieldOptionGroup[],
+): options is SelectFieldOptionGroup[] {
   return options.length > 0 && "group" in options[0];
 }
 
 function OptionItem({ opt }: { opt: SelectFieldOption }) {
   return (
-    <SelectItem
-      value={opt.value}
-      disabled={opt.disabled}
-      className={cn("capitalize", opt.disabled && "opacity-40 cursor-not-allowed", opt.className)}
-    >
-      <div className="flex items-center gap-2 w-full">
-        {opt.icon && <opt.icon className="text-muted-foreground size-4" />}
+    <SelectItem value={opt.value} disabled={opt.disabled} className={opt.className}>
+      <span className="flex w-full items-center gap-2">
+        {opt.icon && <opt.icon className="size-4 text-muted-foreground" aria-hidden />}
+        {/* No forced `capitalize` — the caller's label is the label. */}
         <span>{opt.label}</span>
-      </div>
+      </span>
     </SelectItem>
   );
 }
 
-// ─── SelectField ──────────────────────────────────────────────────────────────
-
 export function SelectField({
   options,
+  value,
+  defaultValue,
+  onChange,
   placeholder = "Select an option",
   isLoading,
+  disabled,
+  invalid,
+  id,
+  name,
+  "aria-label": ariaLabel,
   className,
-  ...props
 }: SelectFieldProps) {
-  const isControlled = "value" in props && props.value !== undefined;
-  const [internalValue, setInternalValue] = useState<string | undefined>(
-    !isControlled ? (props as SelectFieldUncontrolled).defaultValue : undefined,
-  );
+  const [current, setCurrent] = useControllableState<string | undefined>({
+    value,
+    defaultValue,
+    onChange: onChange as ((v: string | undefined) => void) | undefined,
+  });
 
-  const currentValue = isControlled ? (props as SelectFieldControlled).value : internalValue;
-
-  const handleChange = (val: string) => {
-    if (!isControlled) setInternalValue(val);
-    props.onChange?.(val);
-  };
-
-  if (isLoading) return <Skeleton className={cn("h-10 w-full rounded-md", className)} />;
-
-  const grouped = isGrouped(options);
+  if (isLoading) {
+    return <Skeleton className={cn("h-9 w-full rounded-md", className)} />;
+  }
 
   return (
-    <Select value={currentValue} onValueChange={handleChange}>
-      <SelectTrigger className={cn("w-full", className)}>
+    <Select
+      value={current ?? ""}
+      onValueChange={setCurrent}
+      disabled={disabled}
+      name={name}
+    >
+      <SelectTrigger
+        id={id}
+        aria-label={ariaLabel}
+        aria-invalid={invalid}
+        className={cn("w-full", className)}
+      >
         <SelectValue placeholder={placeholder} />
       </SelectTrigger>
-      <SelectContent align="center" side="bottom" className="border-muted">
-        {!grouped ? (
+
+      {/* `align="center"` on a full-width trigger read as a mistake; start
+          aligns the menu with the control, like every other select. */}
+      <SelectContent align="start" side="bottom">
+        {!isGrouped(options) ? (
           <SelectGroup>
             {(options as SelectFieldOption[]).map((opt) => (
               <OptionItem key={opt.value} opt={opt} />
@@ -102,15 +117,20 @@ export function SelectField({
         ) : (
           (options as SelectFieldOptionGroup[]).map((g) => (
             <SelectGroup key={g.group}>
-              <SelectLabel className={cn(
-                "flex items-center gap-1 py-0.5 ml-4 my-2 text-xs bg-muted rounded-full w-fit font-semibold text-muted-foreground",
-                g.className,
-              )}>
-                {g.icon && <g.icon className="size-4" />}
+              {/* A plain group heading. The original styled it as a pill and
+                  indented its options with ml-4, which shifted the highlight
+                  bar out of alignment with ungrouped items. */}
+              <SelectLabel
+                className={cn(
+                  "flex items-center gap-1.5 text-bui-xs font-semibold uppercase tracking-wide text-muted-foreground",
+                  g.className,
+                )}
+              >
+                {g.icon && <g.icon className="size-3.5" aria-hidden />}
                 {g.group}
               </SelectLabel>
               {g.options.map((opt) => (
-                <OptionItem key={opt.value} opt={{ ...opt, className: cn(opt.className, "ml-4") }} />
+                <OptionItem key={opt.value} opt={opt} />
               ))}
             </SelectGroup>
           ))

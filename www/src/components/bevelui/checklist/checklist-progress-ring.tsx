@@ -9,25 +9,42 @@ export function ChecklistProgressRing({
   size?: number;
   strokeWidth?: number;
 }) {
-  const r   = (size - strokeWidth * 2) / 2;
-  const c   = 2 * Math.PI * r;
-  const off = c - (progress / 100) * c;
+  const radius = (size - strokeWidth * 2) / 2;
+  const circumference = 2 * Math.PI * radius;
+  const offset = circumference - (Math.max(0, Math.min(100, progress)) / 100) * circumference;
 
   return (
-    <svg width={size} height={size} style={{ transform: "rotate(-90deg)" }}>
+    <svg
+      width={size}
+      height={size}
+      viewBox={`0 0 ${size} ${size}`}
+      style={{ transform: "rotate(-90deg)" }}
+      aria-hidden
+      focusable="false"
+    >
       <circle
-        cx={size / 2} cy={size / 2} r={r}
-        fill="none" stroke="currentColor" strokeWidth={strokeWidth}
-        className="text-muted/40"
+        cx={size / 2}
+        cy={size / 2}
+        r={radius}
+        fill="none"
+        stroke="currentColor"
+        strokeWidth={strokeWidth}
+        className="text-muted"
       />
       <circle
-        cx={size / 2} cy={size / 2} r={r}
-        fill="none" stroke="currentColor" strokeWidth={strokeWidth}
-        strokeDasharray={c}
-        strokeDashoffset={off}
-        className="text-primary transition-all duration-500"
+        cx={size / 2}
+        cy={size / 2}
+        r={radius}
+        fill="none"
+        stroke="currentColor"
+        strokeWidth={strokeWidth}
+        strokeDasharray={circumference}
+        strokeDashoffset={offset}
         strokeLinecap="round"
+        className="text-primary transition-all duration-500"
       />
     </svg>
   );
 }
+
+ChecklistProgressRing.displayName = "ChecklistProgressRing";

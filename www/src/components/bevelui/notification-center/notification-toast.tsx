@@ -4,6 +4,8 @@ import * as React from "react";
 import { IconX } from "@tabler/icons-react";
 import { cn } from "@/lib/utils";
 import { useNotificationCtx } from "./notification-context";
+import { PRIORITY_DOT, PRIORITY_LIVE } from "./notification-priority";
+import { usePrefersReducedMotion } from "../lib/use-element-rect";
 import type { ToastGroupState } from "./types";
 
 export interface NotificationToastProps {
@@ -11,22 +13,16 @@ export interface NotificationToastProps {
   className?: string;
 }
 
-const PRIORITY_ACCENT: Record<string, string> = {
-  low: "bg-muted-foreground/40",
-  normal: "bg-primary",
-  high: "bg-amber-400",
-  critical: "bg-red-500",
-};
-
 export function NotificationToast({ group, className }: NotificationToastProps) {
-  const { history, dismissToast, pauseToast, resumeToast, undo } = useNotificationCtx();
+  const { history, dismissToast, pauseToast, resumeToast, undo } =
+    useNotificationCtx();
+  const reduceMotion = usePrefersReducedMotion();
 
   const latestId = group.ids[group.ids.length - 1];
   const latest = history.find((n) => n.id === latestId);
   const count = group.ids.length;
 
-  // Progress bar: width animates from 100% to 0% over durationMs, restarting the
-  // CSS transition whenever expiresAt changes (new item bumps the group, or resume).
+  // Restart the countdown transition whenever the group's deadline moves.
   const [ready, setReady] = React.useState(false);
   React.useEffect(() => {
     setReady(false);
@@ -36,33 +32,58 @@ export function NotificationToast({ group, className }: NotificationToastProps) 
 
   if (!latest) return null;
 
+  const accent = PRIORITY_DOT[group.priority] ?? PRIORITY_DOT.normal;
+  const hasTimer = group.durationMs !== null;
+  const isPaused = group.paused && group.remainingMs !== null;
+
   return (
     <div
-      role="status"
+      // A toast with interactive controls is a region, not a bare status line.
+      // Critical items interrupt; everything else waits its turn.
+      role={group.priority === "critical" ? "alert" : "status"}
+      aria-live={PRIORITY_LIVE[group.priority] ?? "polite"}
+      aria-atomic
       onMouseEnter={() => pauseToast(group.groupKey)}
       onMouseLeave={() => resumeToast(group.groupKey)}
+      // Pause on focus too — otherwise the toast expires out from under a
+      // keyboard user midway through tabbing to its Undo button.
+      onFocusCapture={() => pauseToast(group.groupKey)}
+      onBlurCapture={(e) => {
+        if (!e.currentTarget.contains(e.relatedTarget as Node)) {
+          resumeToast(group.groupKey);
+        }
+      }}
       className={cn(
         "relative w-80 max-w-[90vw] overflow-hidden rounded-xl border border-border",
-        "bg-card/95 backdrop-blur shadow-lg",
+        "bg-card/95 shadow-lg backdrop-blur",
         className,
       )}
     >
       <div className="flex items-start gap-3 p-3">
         <span
-          className={cn("mt-1.5 h-1.5 w-1.5 shrink-0 rounded-full", PRIORITY_ACCENT[group.priority] ?? PRIORITY_ACCENT.normal)}
+          aria-hidden
+          className={cn("mt-1.5 size-1.5 shrink-0 rounded-full", accent)}
         />
 
         <div className="min-w-0 flex-1">
           <div className="flex items-center gap-2">
-            <p className="truncate text-[13px] font-medium text-foreground">{latest.title}</p>
+            <p className="truncate text-bui-base font-medium text-foreground">
+              {latest.title}
+            </p>
             {count > 1 && (
-              <span className="shrink-0 rounded-full bg-muted px-1.5 py-0.5 text-[10px] font-medium text-muted-foreground">
+              <span
+                className="shrink-0 rounded-full bg-muted px-1.5 py-0.5 text-bui-2xs font-medium text-muted-foreground"
+                aria-label={`${count} similar notifications`}
+              >
                 {count}
               </span>
             )}
           </div>
+
           {latest.message && (
-            <p className="mt-0.5 line-clamp-2 text-[12px] text-muted-foreground">{latest.message}</p>
+            <p className="mt-0.5 line-clamp-2 text-bui-sm text-muted-foreground">
+              {latest.message}
+            </p>
           )}
 
           {(latest.actions?.length || latest.undo) && (
@@ -71,7 +92,7 @@ export function NotificationToast({ group, className }: NotificationToastProps) 
                 <button
                   type="button"
                   onClick={() => undo(latest.id)}
-                  className="text-[11px] font-medium text-primary hover:underline"
+                  className="rounded text-bui-xs font-medium text-primary hover:underline focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary"
                 >
                   Undo
                 </button>
@@ -81,7 +102,7 @@ export function NotificationToast({ group, className }: NotificationToastProps) 
                   key={a.label}
                   type="button"
                   onClick={a.onClick}
-                  className="text-[11px] font-medium text-muted-foreground hover:text-foreground"
+                  className="rounded text-bui-xs font-medium text-muted-foreground hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary"
                 >
                   {a.label}
                 </button>
@@ -94,30 +115,37 @@ export function NotificationToast({ group, className }: NotificationToastProps) 
           type="button"
           onClick={() => dismissToast(group.groupKey)}
           aria-label="Dismiss notification"
-          className="shrink-0 rounded p-0.5 text-muted-foreground/50 transition-colors hover:text-foreground"
+          className="shrink-0 rounded p-0.5 text-muted-foreground/50 transition-colors hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary"
         >
-          <IconX size={13} strokeWidth={1.8} />
+          <IconX size={13} strokeWidth={1.8} aria-hidden />
         </button>
       </div>
 
-      {group.durationMs !== null && (
+      {hasTimer && (
         <div className="h-0.5 w-full bg-border/60">
-          {group.paused && group.remainingMs !== null ? (
-            <div
-              className={cn("h-full", PRIORITY_ACCENT[group.priority] ?? PRIORITY_ACCENT.normal)}
-              style={{ width: `${(group.remainingMs / group.durationMs) * 100}%` }}
-            />
-          ) : (
-            <div
-              className={cn("h-full", PRIORITY_ACCENT[group.priority] ?? PRIORITY_ACCENT.normal)}
-              style={{
-                width: ready ? "0%" : "100%",
-                transitionProperty: "width",
-                transitionTimingFunction: "linear",
-                transitionDuration: ready ? `${group.durationMs}ms` : "0ms",
-              }}
-            />
-          )}
+          {/* Keyed so React does not reconcile the paused and running bars as
+              the same node — which carried a half-finished width transition
+              across the swap and made pausing visibly jump. */}
+          <div
+            key={isPaused ? "paused" : `running-${group.expiresAt}`}
+            className={cn("h-full", accent)}
+            style={
+              isPaused
+                ? {
+                    width: `${((group.remainingMs ?? 0) / (group.durationMs ?? 1)) * 100}%`,
+                  }
+                : {
+                    width: ready ? "0%" : "100%",
+                    transitionProperty: "width",
+                    transitionTimingFunction: "linear",
+                    transitionDuration: reduceMotion
+                      ? "0ms"
+                      : ready
+                        ? `${group.durationMs}ms`
+                        : "0ms",
+                  }
+            }
+          />
         </div>
       )}
     </div>

@@ -27,20 +27,67 @@
       "label": "Command Palette",
       "href": "/docs/components/command-palette"
     },
-    "next": { "label": "Form Engine", "href": "/docs/components/form-engine" }
+    "next": {
+      "label": "Form Engine",
+      "href": "/docs/components/form-engine"
+    }
   },
   "tocs": [
-    { "id": "overview", "label": "Overview", "depth": 1 },
-    { "id": "demo", "label": "Live demo", "depth": 1 },
-    { "id": "installation", "label": "Installation", "depth": 1 },
-    { "id": "usage", "label": "Basic usage", "depth": 1 },
-    { "id": "config", "label": "With config", "depth": 1 },
-    { "id": "progress", "label": "Real upload progress", "depth": 1 },
-    { "id": "modal", "label": "Modal mode", "depth": 1 },
-    { "id": "programmatic", "label": "Programmatic control", "depth": 1 },
-    { "id": "api-root", "label": "FileUploadRoot", "depth": 2 },
-    { "id": "api-config", "label": "FileUploadConfig", "depth": 2 },
-    { "id": "api-entry", "label": "FileEntry", "depth": 2 }
+    {
+      "id": "overview",
+      "label": "Overview",
+      "depth": 1
+    },
+    {
+      "id": "demo",
+      "label": "Live demo",
+      "depth": 1
+    },
+    {
+      "id": "installation",
+      "label": "Installation",
+      "depth": 1
+    },
+    {
+      "id": "usage",
+      "label": "Basic usage",
+      "depth": 1
+    },
+    {
+      "id": "config",
+      "label": "With config",
+      "depth": 1
+    },
+    {
+      "id": "progress",
+      "label": "Real upload progress",
+      "depth": 1
+    },
+    {
+      "id": "cancellation",
+      "label": "Cancelling and retrying",
+      "depth": 1
+    },
+    {
+      "id": "programmatic",
+      "label": "Programmatic control",
+      "depth": 1
+    },
+    {
+      "id": "api-root",
+      "label": "FileUploadRoot",
+      "depth": 2
+    },
+    {
+      "id": "api-config",
+      "label": "FileUploadConfig",
+      "depth": 2
+    },
+    {
+      "id": "api-entry",
+      "label": "FileEntry",
+      "depth": 2
+    }
   ],
   "sections": [
     {
@@ -88,12 +135,15 @@
                   "comment": "per-file row with progress"
                 },
                 {
-                  "name": "file-upload-context.ts",
+                  "name": "file-upload-context.tsx",
                   "type": "file",
                   "comment": "state machine + actions",
                   "highlight": true
                 },
-                { "name": "index.ts", "type": "file" }
+                {
+                  "name": "index.ts",
+                  "type": "file"
+                }
               ]
             }
           ]
@@ -195,7 +245,31 @@
         }
       ]
     },
-
+    {
+      "id": "cancellation",
+      "title": "Cancelling and retrying",
+      "blocks": [
+        {
+          "type": "text",
+          "content": "onUpload receives an AbortSignal as its third argument. Wire it up and Cancel, Remove and Clear all stop the request in flight — without it they can only change what the UI shows while the bytes keep going."
+        },
+        {
+          "type": "code",
+          "language": "tsx",
+          "code": "async function uploadToApi(\n  file: File,\n  onProgress: (pct: number) => void,\n  signal: AbortSignal,\n) {\n  const body = new FormData();\n  body.append(\"file\", file);\n\n  const res = await fetch(\"/api/upload\", {\n    method: \"POST\",\n    body,\n    signal, // <- the request actually stops when the user cancels\n  });\n\n  if (!res.ok) throw new Error(await res.text());\n  return await res.json(); // { url, meta? }\n}"
+        },
+        {
+          "type": "text",
+          "content": "A failed upload keeps its file icon and gains a Retry control. Retrying clears the error and re-queues that one entry; the rest of the batch is untouched. Files the dropzone turned away — wrong type, too large, over the file limit — are added as non-retryable error rows, so a rejection is something the user can see and act on rather than a drop that appeared to do nothing."
+        },
+        {
+          "type": "callout",
+          "variant": "warning",
+          "title": "Rejections used to be silent",
+          "content": "With a maxSize set, dropping an oversized file produced no visible change at all. Rejected files now enter the list as error entries carrying the reason, and onRejected gives you the raw FileRejection[] if you would rather show your own message."
+        }
+      ]
+    },
     {
       "id": "programmatic",
       "title": "Programmatic control",
@@ -220,29 +294,44 @@
           "rows": [
             {
               "prop": "onUpload",
-              "type": "(file, onProgress) => Promise<{ url, meta? }>",
+              "type": "(file, onProgress, signal) => Promise<{ url, meta? }>",
               "required": true,
-              "description": "Your upload function. Call onProgress(0–100) during upload. Return { url } on success. Throw to trigger error state."
+              "description": "Your upload implementation. Honour the AbortSignal so cancel and remove can stop the request in flight."
             },
             {
               "prop": "config",
               "type": "FileUploadConfig",
-              "description": "Restrict file types, size, and count. Also sets dropzone title and description."
+              "description": "Accepted types, limits, copy, and concurrency."
             },
             {
               "prop": "onComplete",
               "type": "(files: FileEntry[]) => void",
-              "description": "Called when all files finish uploading."
+              "description": "Fires once the queue settles, with the final entries — statuses and URLs included."
             },
             {
               "prop": "onError",
-              "type": "(id, error) => void",
-              "description": "Called when an individual file upload fails."
+              "type": "(id: string, error: string) => void",
+              "description": "Fires per failed or rejected file."
+            },
+            {
+              "prop": "onRejected",
+              "type": "(rejections: FileRejection[]) => void",
+              "description": "Raw rejections from the dropzone, if you want to present them yourself."
+            },
+            {
+              "prop": "onFilesChange",
+              "type": "(files: FileEntry[]) => void",
+              "description": "Fires whenever the queue changes. Safe to pass an inline arrow."
             },
             {
               "prop": "children",
               "type": "ReactNode",
-              "description": "Pass children to replace the default layout."
+              "description": "Replaces the default dropzone + list layout."
+            },
+            {
+              "prop": "className",
+              "type": "string",
+              "description": "Applied to the layout wrapper."
             }
           ]
         }
@@ -257,52 +346,56 @@
           "rows": [
             {
               "prop": "auto",
-              "default": "false",
               "type": "boolean",
-              "description": "Automatically upload files after selection."
+              "default": "false",
+              "description": "Start uploading as soon as files are added."
             },
             {
               "prop": "accept",
               "type": "Accept",
-              "description": "react-dropzone Accept object. E.g. { 'image/*': ['.jpg', '.png'] }"
-            },
-            {
-              "prop": "initialFiles",
-              "type": "FileEntry[]",
-              "description": "Initial files to display in the upload area."
+              "description": "MIME map, e.g. { \"image/*\": [] }. Surfaced to the user under the dropzone copy."
             },
             {
               "prop": "maxSize",
               "type": "number",
-              "default": 2097152,
-              "description": "The maximum allowed file size in bytes (default is 2MB)."
+              "description": "Max bytes per file. Shown in the dropzone; oversized files appear as rejected entries."
             },
             {
               "prop": "maxFiles",
               "type": "number",
-              "description": "Max number of files allowed."
+              "description": "Max entries. The dropzone disables itself and says so once reached."
+            },
+            {
+              "prop": "concurrency",
+              "type": "number",
+              "default": "3",
+              "description": "How many uploads uploadAll runs at once."
             },
             {
               "prop": "multiple",
               "type": "boolean",
               "default": "true",
-              "description": "Allow selecting multiple files."
+              "description": "Allow selecting more than one file at a time."
+            },
+            {
+              "prop": "initialFiles",
+              "type": "FileEntry[]",
+              "description": "Entries present before any interaction."
             },
             {
               "prop": "title",
               "type": "string",
-              "default": "\"Drop your files here\"",
-              "description": "Heading shown in the dropzone."
+              "description": "Dropzone heading."
             },
             {
               "prop": "description",
               "type": "string",
-              "description": "Supporting text below the title."
+              "description": "Dropzone supporting copy. Limits are appended automatically."
             },
             {
               "prop": "icon",
               "type": "ReactNode",
-              "description": "Custom icon in the dropzone. Defaults to upload arrow."
+              "description": "Replaces the upload glyph."
             }
           ]
         }
@@ -318,37 +411,42 @@
             {
               "prop": "id",
               "type": "string",
-              "description": "Auto-generated unique ID."
+              "description": "Generated per entry."
             },
             {
               "prop": "file",
               "type": "File",
-              "description": "The native browser File object."
+              "description": "The native File object."
             },
             {
               "prop": "status",
               "type": "\"idle\" | \"uploading\" | \"done\" | \"error\"",
-              "description": "Current upload state."
+              "description": "Current state of this entry."
             },
             {
               "prop": "progress",
               "type": "number",
-              "description": "Upload progress 0–100."
+              "description": "0–100. Driven by the onProgress callback you are handed."
             },
             {
               "prop": "url",
               "type": "string",
-              "description": "The uploaded file URL — set when status is done."
+              "description": "Set when status is \"done\"."
             },
             {
               "prop": "error",
               "type": "string",
-              "description": "Error message — set when status is error."
+              "description": "Failure or rejection reason."
+            },
+            {
+              "prop": "rejected",
+              "type": "boolean",
+              "description": "True when the file never entered the queue. Rejected entries cannot be retried."
             },
             {
               "prop": "meta",
-              "type": "Record<string, unknown>",
-              "description": "Any extra data returned by your onUpload function."
+              "type": "{ ext?, size?, [key: string]: unknown }",
+              "description": "Display metadata, plus anything your upload returned."
             }
           ]
         }

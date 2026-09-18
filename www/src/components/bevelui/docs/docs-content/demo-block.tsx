@@ -23,7 +23,7 @@ export function DemoBlock({
   return (
     <div className={cn("overflow-hidden rounded-md border border-border/70", className)}>
       <div className="flex items-center justify-between gap-2 border-b border-border/70 bg-muted/30 px-3 py-1.5">
-        <span className="truncate text-[12px] font-medium text-muted-foreground">
+        <span className="truncate text-bui-sm font-medium text-muted-foreground">
           {label ?? "Demo"}
         </span>
 
@@ -33,7 +33,7 @@ export function DemoBlock({
               type="button"
               onClick={() => setTab("preview")}
               className={cn(
-                "flex items-center gap-1 rounded-[4px] px-2 py-1 text-[11px] font-medium transition-colors",
+                "flex items-center gap-1 rounded-[4px] px-2 py-1 text-bui-xs font-medium transition-colors",
                 tab === "preview"
                   ? "bg-muted text-foreground"
                   : "text-muted-foreground hover:text-foreground",
@@ -46,7 +46,7 @@ export function DemoBlock({
               type="button"
               onClick={() => setTab("code")}
               className={cn(
-                "flex items-center gap-1 rounded-[4px] px-2 py-1 text-[11px] font-medium transition-colors",
+                "flex items-center gap-1 rounded-[4px] px-2 py-1 text-bui-xs font-medium transition-colors",
                 tab === "code"
                   ? "bg-muted text-foreground"
                   : "text-muted-foreground hover:text-foreground",
@@ -64,7 +64,7 @@ export function DemoBlock({
           {Component ? (
             <Component />
           ) : (
-            <p className="text-[12.5px] text-muted-foreground">
+            <p className="text-bui-sm text-muted-foreground">
               No demo registered for{" "}
               <code className="font-mono text-foreground">{component}</code>
             </p>

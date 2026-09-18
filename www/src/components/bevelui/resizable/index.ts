@@ -1,6 +1,5 @@
-export { ResizableRoot } from "./resizable-root";
-export { ResizablePanel } from "./resizable-panel";
-export { ResizableHandle } from "./resizable-handle";
+export { ResizableRoot, type ResizableRootProps } from "./resizable-root";
+export { ResizablePanel, type ResizablePanelProps } from "./resizable-panel";
+export { ResizableHandle, type ResizableHandleProps } from "./resizable-handle";
 export { useResizable } from "./resizable-context";
-export type { ResizablePanelConfig } from "./types";
-export type { ResizableRootProps } from "./resizable-root";
+export type { ResizablePanelConfig, ResizableContextValue } from "./types";

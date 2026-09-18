@@ -7,6 +7,7 @@ import {
   getAncestorIds,
   getParentId,
   getFirstChildId,
+  findNode,
 } from "./tree-utils";
 import { cn } from "@/lib/utils";
 import type { TreeNode, TreeConfig, TreeContextValue } from "./types";
@@ -137,13 +138,17 @@ export function TreeRoot<T = unknown>({
       next = new Set([id]);
     }
     setSelected(next);
-    onSelect?.(
-      [...next],
-      [...next].map((nid) => {
-        const n = getAllIds(nodes);
-        return { id: nid, label: nid } as TreeNode<T>;
-      }),
-    );
+
+    // Resolve the real nodes. The original handed the consumer fabricated
+    // stubs — `{ id: nid, label: nid }` — so every selected node arrived with
+    // its id as its label and no icon, children or data, and recomputed
+    // getAllIds once per selection only to throw the result away.
+    const ids = [...next];
+    const resolved = ids
+      .map((nid) => findNode(nodes as TreeNode[], nid))
+      .filter((n): n is TreeNode => n !== null) as TreeNode<T>[];
+
+    onSelect?.(ids, resolved);
   }
 
   const ctx: TreeContextValue<T> = {
@@ -164,24 +169,30 @@ export function TreeRoot<T = unknown>({
 
   return (
     <TreeCtx.Provider value={ctx as TreeContextValue}>
-      <div
-        ref={containerRef}
-        role="tree"
-        tabIndex={0}
-        onKeyDown={handleKeyDown}
-        onFocus={() => {
-          if (!focused && nodes[0]) setFocused(nodes[0].id);
-        }}
-        className={cn("outline-none select-none", className)}
-      >
-        {nodes.map((node, i) => (
-          <TreeNodeComponent
-            key={node.id}
-            node={node as TreeNode}
-            depth={0}
-            isLast={i === nodes.length - 1}
-          />
-        ))}
+      <div ref={containerRef} className={cn("select-none", className)}>
+        <ul
+          role="tree"
+          aria-multiselectable={config.multiSelect || undefined}
+          aria-label={config.label ?? "Tree"}
+          tabIndex={0}
+          onKeyDown={handleKeyDown}
+          onFocus={() => {
+            if (!focused && nodes[0]) setFocused(nodes[0].id);
+          }}
+          className="list-none outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 rounded-sm"
+        >
+          {nodes.map((node, i) => (
+            <TreeNodeComponent
+              key={node.id}
+              node={node as TreeNode}
+              depth={0}
+              isLast={i === nodes.length - 1}
+              level={1}
+              setSize={nodes.length}
+              posInSet={i + 1}
+            />
+          ))}
+        </ul>
       </div>
     </TreeCtx.Provider>
   );

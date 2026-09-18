@@ -158,7 +158,7 @@ function TimeColumn({
       {/* Header */}
       <div className="flex items-center gap-1.5 px-3 py-2.5 border-b border-border/60 shrink-0">
         <IconClock size={12} className="text-muted-foreground" />
-        <span className="text-[11px] font-medium text-muted-foreground uppercase tracking-wide">
+        <span className="text-bui-xs font-medium text-muted-foreground uppercase tracking-wide">
           Time
         </span>
       </div>

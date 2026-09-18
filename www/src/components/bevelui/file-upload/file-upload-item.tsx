@@ -1,115 +1,169 @@
-import { cn } from "@/lib/utils";
-import type { FileEntry } from "./types";
+"use client";
+
+import * as React from "react";
 import { motion } from "motion/react";
 import {
+  IconAlertCircle,
   IconCheck,
   IconFile,
   IconFileTypePdf,
   IconFileTypeXls,
   IconLoader2,
   IconPhoto,
-  IconX,
-  IconAlertCircle,
   IconRefresh,
   IconVideo,
+  IconX,
 } from "@tabler/icons-react";
+import { cn } from "@/lib/utils";
 import {
-  Popover,
-  PopoverContent,
-  PopoverTrigger,
-} from "@/components/ui/popover";
-import { formatBytes, formatTimeLeft, getFileExt } from "./file-upload-utils";
+  Tooltip,
+  TooltipContent,
+  TooltipTrigger,
+} from "@/components/ui/tooltip";
+import { usePrefersReducedMotion } from "../lib/use-element-rect";
+import type { FileEntry, FileStatus } from "./types";
+
+// ─── Pieces ───────────────────────────────────────────────────────────────────
 
 function ProgressBar({
   progress,
   status,
 }: Pick<FileEntry, "progress" | "status">) {
+  const reduceMotion = usePrefersReducedMotion();
+
   return (
-    <div className="w-full space-y-1">
-      <div className="overflow-hidden rounded-full h-1 bg-muted-foreground/10 w-full">
-        <motion.div
-          className={cn(
-            "h-full rounded-full",
-            status === "done"
-              ? "bg-green-500 dark:bg-green-400"
-              : status === "error"
-                ? "bg-red-500"
-                : "bg-primary",
-          )}
-          initial={{ width: "0%" }}
-          animate={{ width: `${progress}%` }}
-          transition={{ duration: 0.35, ease: "easeOut" }}
-        />
-      </div>
+    <div
+      className="h-1 w-full overflow-hidden rounded-full bg-muted-foreground/10"
+      role="progressbar"
+      aria-valuenow={progress}
+      aria-valuemin={0}
+      aria-valuemax={100}
+    >
+      <motion.div
+        className={cn(
+          "h-full rounded-full",
+          status === "done" && "bg-emerald-500 dark:bg-emerald-400",
+          status === "error" && "bg-destructive",
+          status !== "done" && status !== "error" && "bg-primary",
+        )}
+        initial={{ width: "0%" }}
+        animate={{ width: `${progress}%` }}
+        transition={{ duration: reduceMotion ? 0 : 0.35, ease: "easeOut" }}
+      />
     </div>
   );
 }
 
 function FileTypeIcon({ file, size = 22 }: { file: File; size?: number }) {
   const type = file.type;
-  const stroke = 1.8;
-  if (type.startsWith("video/"))
-    return (
-      <IconVideo size={size} strokeWidth={stroke} className="stroke-primary" />
-    );
-  if (type.startsWith("image/"))
-    return (
-      <IconPhoto size={size} strokeWidth={stroke} className="stroke-primary" />
-    );
-  if (type === "application/pdf")
-    return (
-      <IconFileTypePdf
-        size={size}
-        strokeWidth={stroke}
-        className="stroke-primary"
-      />
-    );
-  if (
-    type.includes("spreadsheet") ||
-    type.includes("excel") ||
-    file.name.endsWith(".xlsx")
-  )
-    return (
-      <IconFileTypeXls
-        size={size}
-        strokeWidth={stroke}
-        className="stroke-primary"
-      />
-    );
+  const name = file.name.toLowerCase();
+
+  const Icon = type.startsWith("video/")
+    ? IconVideo
+    : type.startsWith("image/")
+      ? IconPhoto
+      : type === "application/pdf" || name.endsWith(".pdf")
+        ? IconFileTypePdf
+        : type.includes("spreadsheet") ||
+            type.includes("excel") ||
+            name.endsWith(".xlsx") ||
+            name.endsWith(".csv")
+          ? IconFileTypeXls
+          : IconFile;
+
   return (
-    <IconFile size={size} strokeWidth={stroke} className="stroke-primary" />
+    <Icon size={size} strokeWidth={1.8} className="stroke-primary" aria-hidden />
   );
 }
 
-function StatusIndicator({ status }: Pick<FileEntry, "status">) {
+/**
+ * Status glyph. Returns a span rather than a div — the original nested a div
+ * inside a <p>, which is invalid HTML and produced a hydration mismatch in
+ * Next.js on every uploading file.
+ */
+function StatusIndicator({ status }: { status: FileStatus }) {
   if (status === "done") {
     return (
-      <div className="w-5 h-5 rounded-full bg-green-500/15 flex items-center justify-center shrink-0">
+      <span className="inline-flex size-5 shrink-0 items-center justify-center rounded-full bg-emerald-500/15">
         <IconCheck
           size={11}
           strokeWidth={2.5}
-          className="dark:text-green-400 text-green-500"
+          className="text-emerald-600 dark:text-emerald-400"
+          aria-hidden
         />
-      </div>
+      </span>
     );
   }
   if (status === "error") {
     return (
-      <div className="w-5 h-5 rounded-full bg-red-500/15 flex items-center justify-center shrink-0">
-        <IconAlertCircle size={11} strokeWidth={2.5} className="text-red-500" />
-      </div>
+      <span className="inline-flex size-5 shrink-0 items-center justify-center rounded-full bg-destructive/15">
+        <IconAlertCircle
+          size={11}
+          strokeWidth={2.5}
+          className="text-destructive"
+          aria-hidden
+        />
+      </span>
     );
   }
   if (status === "uploading") {
     return (
-      <IconLoader2 size={12} className="animate-spin text-primary shrink-0" />
+      <IconLoader2
+        size={12}
+        className="shrink-0 animate-spin text-primary"
+        aria-hidden
+      />
     );
   }
   return null;
 }
 
+/**
+ * Thumbnail slot. The original swapped the file icon out for a retry button
+ * when a file errored — and rendered an empty box when no onRetry was passed.
+ * The icon now always shows; retry is a separate, labelled control.
+ */
+function FileThumb({
+  file,
+  status,
+  className,
+}: {
+  file: File;
+  status: FileStatus;
+  className?: string;
+}) {
+  return (
+    <span
+      className={cn(
+        "inline-flex size-11 shrink-0 items-center justify-center rounded-lg bg-primary/10",
+        status === "error" && "bg-destructive/10",
+        className,
+      )}
+    >
+      <FileTypeIcon file={file} size={22} />
+    </span>
+  );
+}
+
+function statusLabel(status: FileStatus, progress: number): string {
+  switch (status) {
+    case "uploading":
+      // A percentage is something we actually know. The original derived a
+      // "seconds left" figure from the percentage alone, which cannot be done.
+      return `${progress}%`;
+    case "done":
+      return "Done";
+    case "error":
+      return "Failed";
+    default:
+      return "Queued";
+  }
+}
+
+// ─── Item ─────────────────────────────────────────────────────────────────────
+
 export interface FileUploadItemProps extends FileEntry {
-  /** Show as a list row instead of a grid card */
+  /** Render as a list row instead of a grid card. */
   isList?: boolean;
   onRemove?: (id: string) => void;
   onRetry?: (id: string) => void;
@@ -122,152 +176,154 @@ export function FileUploadItem({
   status,
   progress,
   error,
+  rejected,
   meta,
-  url,
   isList = false,
   onRemove,
   onRetry,
   onCancel,
 }: FileUploadItemProps) {
-  const timeLeft =
-    status === "uploading"
-      ? formatTimeLeft(progress)
-      : status === "error"
-        ? "Error"
-        : status === "done"
-          ? "Done"
-          : "";
-  const hasError = status === "error" && !!error;
-  const name = file.name.replace(/\.[^/.]+$/, "");
+  const reduceMotion = usePrefersReducedMotion();
+
+  const displayName = file.name;
+  const canRetry = status === "error" && !rejected && !!onRetry;
+  const canCancel = status === "uploading" && !!onCancel;
+  const label = statusLabel(status, progress);
+
+  const removeButton = (
+    <button
+      type="button"
+      onClick={() => (canCancel ? onCancel?.(id) : onRemove?.(id))}
+      aria-label={
+        canCancel ? `Cancel upload of ${displayName}` : `Remove ${displayName}`
+      }
+      className={cn(
+        "inline-flex shrink-0 items-center justify-center rounded-full border border-border/60 bg-muted/20 text-muted-foreground transition-colors",
+        "hover:border-border hover:text-foreground",
+        "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary",
+        isList ? "size-8" : "size-6",
+      )}
+    >
+      <IconX size={isList ? 14 : 12} strokeWidth={2.5} aria-hidden />
+    </button>
+  );
+
+  const retryButton = canRetry && (
+    <button
+      type="button"
+      onClick={() => onRetry?.(id)}
+      aria-label={`Retry upload of ${displayName}`}
+      className={cn(
+        "inline-flex items-center gap-1 rounded-md px-1.5 py-0.5 text-bui-2xs font-medium text-destructive transition-colors",
+        "hover:bg-destructive/10",
+        "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-destructive",
+      )}
+    >
+      <IconRefresh size={12} strokeWidth={2} aria-hidden />
+      Retry
+    </button>
+  );
+
+  const errorMessage = status === "error" && error && (
+    <Tooltip>
+      <TooltipTrigger asChild>
+        <p className="truncate text-bui-xs text-destructive" title={error}>
+          {error}
+        </p>
+      </TooltipTrigger>
+      <TooltipContent side="bottom" className="max-w-56">
+        {error}
+      </TooltipContent>
+    </Tooltip>
+  );
+
+  const motionProps = {
+    layout: !reduceMotion,
+    initial: reduceMotion ? false : { opacity: 0, y: 8 },
+    animate: { opacity: 1, y: 0 },
+    exit: reduceMotion ? undefined : { opacity: 0, y: -8 },
+    transition: { duration: reduceMotion ? 0 : 0.2 },
+  } as const;
+
+  // ── List row ──
   if (isList) {
     return (
-      <motion.div
-        layout
-        initial={{ opacity: 0, y: 8 }}
-        animate={{ opacity: 1, y: 0 }}
-        exit={{ opacity: 0, y: -8 }}
-        transition={{ duration: 0.2 }}
+      <motion.li
+        {...motionProps}
         className="flex flex-col gap-2.5 rounded-xl border border-border/60 bg-muted/20 px-4 py-3.5 shadow-sm"
       >
         <div className="flex items-center gap-3">
-          <div
-            className={cn(
-              "w-11 h-11 rounded-lg bg-primary/10 flex items-center justify-center ",
-              status === "error" && "bg-red-500/10",
-            )}
-          >
-            {status === "error" ? (
-              onRetry && (
-                <button
-                  onClick={() => onRetry(id)}
-                  type="button"
-                  className="text-[10px] text-red-500 hover:text-red-400 flex items-center gap-1 text-xl cursor-pointer"
-                >
-                  <IconRefresh size={24} strokeWidth={2} />
-                </button>
-              )
-            ) : (
-              <FileTypeIcon file={file} size={22} />
-            )}
-          </div>
+          <FileThumb file={file} status={status} />
 
-          <div className="flex-1 min-w-0">
-            <p className="text-sm font-semibold truncate text-foreground leading-tight">
-              {name}
+          <div className="min-w-0 flex-1">
+            <p className="truncate text-bui-md font-semibold leading-tight text-foreground">
+              {displayName}
             </p>
-            <p className="text-xs text-muted-foreground mt-0.5 flex items-center justify-between gap-4">
-              {meta?.ext} · {meta?.size}
-              <span className="flex items-center gap-1 text-xs">
-                <StatusIndicator status={status} />
-                {timeLeft && `${timeLeft}`}
+            <div className="mt-0.5 flex items-center justify-between gap-4 text-bui-sm text-muted-foreground">
+              <span className="truncate">
+                {meta?.ext}
+                {meta?.size ? ` · ${meta.size}` : ""}
               </span>
-            </p>
+              <span className="flex shrink-0 items-center gap-1.5">
+                <StatusIndicator status={status} />
+                {label}
+              </span>
+            </div>
           </div>
 
-          <button
-            onClick={() => onRemove?.(id)}
-            className="w-8 h-8 rounded-full border border-border/60 bg-muted/20 flex items-center justify-center text-muted-foreground hover:text-foreground hover:border-border transition-colors shrink-0"
-          >
-            <IconX size={14} strokeWidth={2.5} />
-          </button>
+          <div className="flex shrink-0 items-center gap-1.5">
+            {retryButton}
+            {removeButton}
+          </div>
         </div>
 
-        {status !== "idle" && (
+        {status !== "idle" && status !== "error" && (
           <ProgressBar progress={progress} status={status} />
         )}
-        {hasError && <p className="text-[11px] text-red-500">{error}</p>}
-      </motion.div>
+        {errorMessage}
+      </motion.li>
     );
   }
+
+  // ── Grid card ──
   return (
-    <motion.div
-      layout
-      initial={{ opacity: 0, y: 8 }}
-      animate={{ opacity: 1, y: 0 }}
-      exit={{ opacity: 0, y: -8 }}
-      transition={{ duration: 0.2 }}
-      className="flex flex-col  rounded-xl border border-border/60 bg-muted/20 px-4 py-3.5 shadow-sm relative aspect-square justify-between"
+    <motion.li
+      {...motionProps}
+      className="relative flex aspect-square flex-col justify-between rounded-xl border border-border/60 bg-muted/20 px-4 py-3.5 shadow-sm"
     >
-      <div className=" absolute inset-x-0 top-0 p-2 flex items-center justify-between">
-        <span className="flex items-center gap-1 text-xs">
-          <Popover>
-            <PopoverTrigger>
-              <StatusIndicator status={status} />
-            </PopoverTrigger>
-            <PopoverContent className="max-w-40" dir="bottom" side="top">
-              {hasError && (
-                <p className="text-[11px] dark:text-red-500 text-red-600">
-                  {error}
-                </p>
-              )}
-            </PopoverContent>
-          </Popover>
-          {timeLeft && `${timeLeft}`}
+      <div className="flex items-start justify-between gap-2">
+        <span className="flex items-center gap-1.5 text-bui-sm text-muted-foreground">
+          <StatusIndicator status={status} />
+          {label}
         </span>
-        <button
-          onClick={() => onRemove?.(id)}
-          className="w-6 h-6 rounded-md border border-border/60 bg-muted/20 flex items-center justify-center text-muted-foreground hover:text-foreground hover:border-border transition-colors shrink-0"
-        >
-          <IconX size={12} strokeWidth={2.5} />
-        </button>
-      </div>
-      <div className="flex flex-col items-center flex-1  justify-end pt-4 pb-2">
-        <div
-          className={cn(
-            "w-11 h-11 rounded-lg bg-primary/10 flex items-center justify-center ",
-            status === "error" && "bg-red-500/10",
-          )}
-        >
-          {status === "error" ? (
-            onRetry && (
-              <button
-                onClick={() => onRetry(id)}
-                type="button"
-                className="text-[10px] text-red-500 hover:text-red-400 flex items-center gap-1 text-xl cursor-pointer"
-              >
-                <IconRefresh size={24} strokeWidth={2} />
-              </button>
-            )
-          ) : (
-            <FileTypeIcon file={file} size={22} />
-          )}
-        </div>
+        {removeButton}
       </div>
 
-      <div className=" space-y-2">
-        <div className="">
-          <p className="text-xs font-medium line-clamp-1 text-foreground">
-            {name}
-          </p>
-          <div className="text-xs text-muted-foreground mt-0.5">
-            {meta?.ext} · {meta?.size}
-          </div>
-        </div>
+      <div className="flex flex-1 items-center justify-center py-2">
+        <FileThumb file={file} status={status} className="size-12" />
+      </div>
 
-        {status !== "idle" && (
+      <div className="space-y-1.5">
+        <p className="line-clamp-1 text-bui-sm font-medium text-foreground">
+          {displayName}
+        </p>
+        <p className="text-bui-xs text-muted-foreground">
+          {meta?.ext}
+          {meta?.size ? ` · ${meta.size}` : ""}
+        </p>
+
+        {status !== "idle" && status !== "error" && (
           <ProgressBar progress={progress} status={status} />
         )}
+        {status === "error" && (
+          <div className="flex items-center justify-between gap-2">
+            {errorMessage}
+            {retryButton}
+          </div>
+        )}
       </div>
-    </motion.div>
+    </motion.li>
   );
 }
+
+FileUploadItem.displayName = "FileUploadItem";

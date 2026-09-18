@@ -77,7 +77,7 @@ export function CopyPageMarkdown({ page, className }: { page: DocPage; className
         <button
           type="button"
           onClick={handleCopy}
-          className="flex items-center gap-1.5 px-2.5 py-1.5 text-[12px] font-medium text-muted-foreground hover:bg-muted/60 hover:text-foreground"
+          className="flex items-center gap-1.5 px-2.5 py-1.5 text-bui-sm font-medium text-muted-foreground hover:bg-muted/60 hover:text-foreground"
         >
           {copied ? (
             <IconCheck size={13} strokeWidth={2} />
@@ -106,7 +106,7 @@ export function CopyPageMarkdown({ page, className }: { page: DocPage; className
           <button
             type="button"
             onClick={handleCopy}
-            className="flex w-full items-center gap-2 px-3 py-1.5 text-left text-[12.5px] text-foreground hover:bg-muted/60"
+            className="flex w-full items-center gap-2 px-3 py-1.5 text-left text-bui-sm text-foreground hover:bg-muted/60"
           >
             <IconClipboard size={13} strokeWidth={1.9} className="text-muted-foreground" />
             Copy as Markdown
@@ -114,7 +114,7 @@ export function CopyPageMarkdown({ page, className }: { page: DocPage; className
           <button
             type="button"
             onClick={handleViewRaw}
-            className="flex w-full items-center gap-2 px-3 py-1.5 text-left text-[12.5px] text-foreground hover:bg-muted/60"
+            className="flex w-full items-center gap-2 px-3 py-1.5 text-left text-bui-sm text-foreground hover:bg-muted/60"
           >
             <IconFileText size={13} strokeWidth={1.9} className="text-muted-foreground" />
             View as Markdown
@@ -122,7 +122,7 @@ export function CopyPageMarkdown({ page, className }: { page: DocPage; className
           <button
             type="button"
             onClick={handleOpenInChatGPT}
-            className="flex w-full items-center gap-2 px-3 py-1.5 text-left text-[12.5px] text-foreground hover:bg-muted/60"
+            className="flex w-full items-center gap-2 px-3 py-1.5 text-left text-bui-sm text-foreground hover:bg-muted/60"
           >
             <IconBrandOpenai size={13} strokeWidth={1.9} className="text-muted-foreground" />
             Open in ChatGPT

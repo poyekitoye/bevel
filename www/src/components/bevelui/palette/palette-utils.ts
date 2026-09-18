@@ -90,11 +90,11 @@ export function hexToHsl(hex: string): [number, number, number] {
   return [Math.round(h * 360), Math.round(s * 100), Math.round(l * 100)];
 }
 
-export function getContrastColor(hex: string): "#000000" | "#ffffff" {
-  const [r, g, b] = hexToRgb(hex);
-  const lum = (0.299 * r + 0.587 * g + 0.114 * b) / 255;
-  return lum > 0.55 ? "#000000" : "#ffffff";
-}
+// Re-exported from the shared colour helper so the palette and every other
+// system that paints text over a caller-supplied colour agree on one WCAG
+// contrast calculation — this module used to own a luminance approximation
+// that nothing outside the palette could reach.
+export { getContrastColor } from "../lib/color";
 
 export function normalizeHex(raw: string): string | null {
   const h = raw.trim().replace(/^#/, "");

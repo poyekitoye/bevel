@@ -148,7 +148,7 @@ function DefaultColumnHeader({
       <span className="text-sm font-semibold text-foreground">
         {column.title}
       </span>
-      <span className="text-[10px] font-mono text-muted-foreground/50 bg-muted/50 px-1.5 py-0.5 rounded-full">
+      <span className="text-bui-2xs font-mono text-muted-foreground/50 bg-muted/50 px-1.5 py-0.5 rounded-full">
         {cardCount}
       </span>
     </div>

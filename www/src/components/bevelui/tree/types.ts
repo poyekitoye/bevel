@@ -16,6 +16,8 @@ export interface TreeConfig {
   defaultExpandAll?: boolean;
   defaultExpanded?: string[];
   defaultSelected?: string[];
+  /** Accessible name for the tree. */
+  label?: string;
 }
 
 export interface TreeContextValue<T = unknown> {

@@ -4,10 +4,20 @@
     "description": "A fully-engineered ⌘K command menu with fuzzy search, two-tier tab filtering, keyboard navigation, grouped results, avatar support, and a keyboard shortcut footer.",
     "badge": "Components System",
     "category": "navigation-search",
-    "useCases": ["Dashboard", "Productivity app", "Admin panel"],
+    "useCases": [
+      "Dashboard",
+      "Productivity app",
+      "Admin panel"
+    ],
     "tier": "free",
-    "builtWith": ["Motion", "Tailwind CSS"],
-    "related": ["spotlight", "product-tour"],
+    "builtWith": [
+      "Motion",
+      "Tailwind CSS"
+    ],
+    "related": [
+      "spotlight",
+      "product-tour"
+    ],
     "registryName": "command-palette",
     "features": [
       "Zero dependencies",
@@ -31,20 +41,67 @@
       "label": "Product Tour",
       "href": "/docs/components/product-tour"
     },
-    "next": { "label": "File Upload", "href": "/docs/components/file-upload" }
+    "next": {
+      "label": "File Upload",
+      "href": "/docs/components/file-upload"
+    }
   },
   "tocs": [
-    { "id": "overview", "label": "Overview", "depth": 1 },
-    { "id": "demo", "label": "Live demo", "depth": 1 },
-    { "id": "installation", "label": "Installation", "depth": 1 },
-    { "id": "usage", "label": "Basic usage", "depth": 1 },
-    { "id": "sections", "label": "Sections and items", "depth": 1 },
-    { "id": "tabs", "label": "Source and filter tabs", "depth": 1 },
-    { "id": "programmatic", "label": "Programmatic control", "depth": 1 },
-    { "id": "faq", "label": "FAQ", "depth": 1 },
-    { "id": "api-item", "label": "CommandPaletteItem", "depth": 2 },
-    { "id": "api-section", "label": "CommandPaletteSection", "depth": 2 },
-    { "id": "api-root", "label": "CommandPaletteRoot", "depth": 2 }
+    {
+      "id": "overview",
+      "label": "Overview",
+      "depth": 1
+    },
+    {
+      "id": "demo",
+      "label": "Live demo",
+      "depth": 1
+    },
+    {
+      "id": "installation",
+      "label": "Installation",
+      "depth": 1
+    },
+    {
+      "id": "usage",
+      "label": "Basic usage",
+      "depth": 1
+    },
+    {
+      "id": "sections",
+      "label": "Sections and items",
+      "depth": 1
+    },
+    {
+      "id": "tabs",
+      "label": "Source and filter tabs",
+      "depth": 1
+    },
+    {
+      "id": "programmatic",
+      "label": "Programmatic control",
+      "depth": 1
+    },
+    {
+      "id": "faq",
+      "label": "FAQ",
+      "depth": 1
+    },
+    {
+      "id": "api-item",
+      "label": "CommandPaletteItem",
+      "depth": 2
+    },
+    {
+      "id": "api-section",
+      "label": "CommandPaletteSection",
+      "depth": 2
+    },
+    {
+      "id": "api-root",
+      "label": "CommandPaletteRoot",
+      "depth": 2
+    }
   ],
   "sections": [
     {
@@ -72,7 +129,7 @@
                   "comment": "context + keyboard binding"
                 },
                 {
-                  "name": "command-palette-modal.tsx",
+                  "name": "command-palette.tsx",
                   "type": "file",
                   "comment": "dialog + search input"
                 },
@@ -92,18 +149,24 @@
                   "comment": "shortcut hints"
                 },
                 {
-                  "name": "fuzzy.ts",
+                  "name": "command-palette-fuzzy.ts",
                   "type": "file",
                   "comment": "scoring algorithm",
                   "highlight": true
                 },
                 {
-                  "name": "use-command-palette.ts",
+                  "name": "command-palette-context.tsx",
                   "type": "file",
                   "comment": "programmatic control hook"
                 },
-                { "name": "types.ts", "type": "file" },
-                { "name": "index.ts", "type": "file" }
+                {
+                  "name": "types.ts",
+                  "type": "file"
+                },
+                {
+                  "name": "index.ts",
+                  "type": "file"
+                }
               ]
             }
           ]

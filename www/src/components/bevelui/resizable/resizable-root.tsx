@@ -1,17 +1,30 @@
 "use client";
 
 import * as React from "react";
-import { ResizableCtx } from "./resizable-context";
-import type { ResizablePanelConfig, ResizableContextValue } from "./types";
 import { cn } from "@/lib/utils";
+import { ResizableCtx } from "./resizable-context";
+import { useEventCallback } from "../lib/use-controllable-state";
+import type { ResizableContextValue, ResizablePanelConfig } from "./types";
 
 export interface ResizableRootProps {
-  defaultSizes: number[]; // must sum to 100
+  /** Percentages. Normalised to 100 if they do not already sum to it. */
+  defaultSizes: number[];
   direction?: "horizontal" | "vertical";
   panelConfigs?: ResizablePanelConfig[];
+  /** Fires on commit (drag end, keyboard step, collapse). */
   onResize?: (sizes: number[]) => void;
+  /** Fires on every frame during a drag. */
+  onResizing?: (sizes: number[]) => void;
   children: React.ReactNode;
   className?: string;
+}
+
+/** "must sum to 100" was only ever a comment; now it is enforced. */
+function normalize(sizes: number[]): number[] {
+  const total = sizes.reduce((a, b) => a + b, 0);
+  if (total <= 0) return sizes.map(() => 100 / Math.max(1, sizes.length));
+  if (Math.abs(total - 100) < 0.01) return sizes;
+  return sizes.map((s) => (s / total) * 100);
 }
 
 export function ResizableRoot({
@@ -19,48 +32,73 @@ export function ResizableRoot({
   direction = "horizontal",
   panelConfigs = [],
   onResize,
+  onResizing,
   children,
   className,
 }: ResizableRootProps) {
-  const [sizes, setSizes] = React.useState<number[]>(defaultSizes);
+  const [sizes, setSizes] = React.useState<number[]>(() =>
+    normalize(defaultSizes),
+  );
   const [collapsed, setCollapsed] = React.useState<boolean[]>(() =>
     panelConfigs.map((c) => c.defaultCollapsed ?? false),
   );
-  const containerRef = React.useRef<HTMLDivElement>(null);
+  const [isDragging, setIsDragging] = React.useState(false);
 
-  // Write sizes as CSS vars directly — used during drag (no re-render)
-  function writeCssVars(s: number[]) {
+  const containerRef = React.useRef<HTMLDivElement>(null);
+  const draggingRef = React.useRef(false);
+
+  const emitResize = useEventCallback(onResize);
+  const emitResizing = useEventCallback(onResizing);
+
+  const writeVars = React.useCallback((next: number[]) => {
     const el = containerRef.current;
     if (!el) return;
-    s.forEach((size, i) => {
+    next.forEach((size, i) => {
       el.style.setProperty(`--panel-${i}`, `${size}%`);
     });
-  }
+  }, []);
 
-  // Initialize CSS vars when sizes state changes
+  // Mirror committed state into the CSS vars — but never mid-drag. The
+  // original ran this on every `sizes` change, so any unrelated re-render
+  // during a gesture snapped the panels back to their pre-drag widths.
   React.useLayoutEffect(() => {
-    writeCssVars(sizes);
-  }, [sizes]);
+    if (draggingRef.current) return;
+    writeVars(sizes);
+  }, [sizes, writeVars]);
 
-  const setSizeDirect = React.useCallback((index: number, size: number) => {
-    // Direct DOM write — bypasses React entirely
-    const el = containerRef.current;
-    if (!el) return;
-    el.style.setProperty(`--panel-${index}`, `${size}%`);
+  const setSizeDirect = React.useCallback(
+    (index: number, size: number) => {
+      containerRef.current?.style.setProperty(`--panel-${index}`, `${size}%`);
+      emitResizing?.(
+        Array.from({ length: sizes.length }, (_, i) =>
+          i === index ? size : sizes[i],
+        ),
+      );
+    },
+    [emitResizing, sizes],
+  );
+
+  const beginDrag = React.useCallback(() => {
+    draggingRef.current = true;
+    setIsDragging(true);
+  }, []);
+
+  const endDrag = React.useCallback(() => {
+    draggingRef.current = false;
+    setIsDragging(false);
   }, []);
 
   const commitSizes = React.useCallback(
     (next: number[]) => {
       setSizes(next);
-      onResize?.(next);
+      emitResize(next);
     },
-    [onResize],
+    [emitResize],
   );
 
   const toggleCollapse = React.useCallback(
     (panelIndex: number) => {
-      const config = panelConfigs[panelIndex];
-      if (!config?.collapsible) return;
+      if (!panelConfigs[panelIndex]?.collapsible) return;
       setCollapsed((prev) => {
         const next = [...prev];
         next[panelIndex] = !prev[panelIndex];
@@ -70,24 +108,43 @@ export function ResizableRoot({
     [panelConfigs],
   );
 
-  const ctx: ResizableContextValue = {
-    sizes,
-    collapsed,
-    direction,
-    containerRef,
-    setSizeDirect,
-    commitSizes,
-    toggleCollapse,
-    panelConfigs,
-  };
+  const value = React.useMemo<ResizableContextValue>(
+    () => ({
+      sizes,
+      collapsed,
+      direction,
+      containerRef,
+      isDragging,
+      setSizeDirect,
+      commitSizes,
+      beginDrag,
+      endDrag,
+      toggleCollapse,
+      panelConfigs,
+    }),
+    [
+      sizes,
+      collapsed,
+      direction,
+      isDragging,
+      setSizeDirect,
+      commitSizes,
+      beginDrag,
+      endDrag,
+      toggleCollapse,
+      panelConfigs,
+    ],
+  );
 
   return (
-    <ResizableCtx.Provider value={ctx}>
+    <ResizableCtx.Provider value={value}>
       <div
         ref={containerRef}
         className={cn(
           "flex overflow-hidden",
           direction === "horizontal" ? "flex-row" : "flex-col",
+          // Keeps text from being selected across panels mid-drag.
+          isDragging && "select-none",
           className,
         )}
       >
