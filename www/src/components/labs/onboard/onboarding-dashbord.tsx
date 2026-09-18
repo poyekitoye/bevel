@@ -70,18 +70,18 @@ export function OnboardingDashboard({
         {/* Sidebar */}
         <TourAnchor step={2} asChild>
           <aside className="w-64 shrink-0 border-r border-border bg-muted/10 flex flex-col py-4 px-3 gap-6">
-              <div className="px-2  p-2 ">
-                <div className={"flex items-end gap-2"}>
-                  <BevelIcon className="size-6! shrink-0 -translate-y-1.5 text-rose-400" />
-                  <span className="font-semibold  font-sans text-lg line-clamp-1">
-                    {company || "My Workspace"}
-                  </span>
-                </div>
-                <span className="text-[10px] text-muted-foreground">
-                  Free plan
+            <div className="px-2  p-2 ">
+              <div className={"flex items-end gap-2"}>
+                <BevelIcon className="size-6! shrink-0 -translate-y-1.5 text-rose-400" />
+                <span className="font-semibold  font-sans text-lg line-clamp-1">
+                  {company || "My Workspace"}
                 </span>
               </div>
-            </TourAnchor>
+              <span className="text-[10px] text-muted-foreground">
+                Free plan
+              </span>
+            </div>
+
             <div className=" flex flex-col gap-1">
               {[
                 { icon: IconLayoutDashboard, label: "Dashboard", active: true },
